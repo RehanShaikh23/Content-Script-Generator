@@ -1,0 +1,109 @@
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Amiri:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0}
+  .w{background:#0b1e10;font-family:'DM Sans',sans-serif;color:#e8d9b0;padding:1.75rem 1.25rem;min-height:500px}
+  .hd{text-align:center;margin-bottom:1.5rem}
+  .bism{font-family:'Amiri',serif;font-size:1.3rem;color:#d4a843;margin-bottom:.25rem}
+  .ttl{font-family:'Cormorant Garamond',serif;font-size:1.8rem;font-weight:700;color:#d4a843}
+  .sub{font-size:.75rem;color:rgba(232,217,176,.4);margin-top:.2rem}
+  .orn{color:#d4a843;letter-spacing:.4em;font-size:1rem;display:block;margin-bottom:.3rem}
+  .card{background:rgba(255,255,255,.025);border:1px solid rgba(212,168,67,.18);border-radius:14px;padding:1.5rem;position:relative}
+  .card::before{content:'';position:absolute;top:-1px;left:18%;right:18%;height:1px;background:linear-gradient(90deg,transparent,rgba(212,168,67,.4),transparent)}
+  .fl{margin-bottom:1.1rem}
+  .lb{display:block;font-size:.7rem;color:#d4a843;margin-bottom:.4rem;letter-spacing:.1em;text-transform:uppercase;font-weight:500}
+  input,textarea{width:100%;padding:.7rem .9rem;background:rgba(255,255,255,.04);border:1px solid rgba(212,168,67,.18);border-radius:9px;color:#e8d9b0;font-family:'DM Sans',sans-serif;font-size:.88rem;outline:none;transition:border .2s}
+  input:focus,textarea:focus{border-color:rgba(212,168,67,.45)}
+  input::placeholder,textarea::placeholder{color:rgba(232,217,176,.28)}
+  textarea{resize:vertical;min-height:60px}
+  .g3{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem}
+  .g4{display:grid;grid-template-columns:repeat(4,1fr);gap:.45rem}
+  .o{padding:.6rem .3rem;border-radius:9px;cursor:pointer;border:1px solid rgba(212,168,67,.15);background:rgba(255,255,255,.02);color:rgba(232,217,176,.45);font-family:'DM Sans',sans-serif;font-size:.74rem;transition:all .2s;text-align:center;line-height:1.35;width:100%}
+  .o.on{border:1.5px solid #d4a843;background:rgba(212,168,67,.12);color:#d4a843}
+  .oi{display:block;font-size:.95rem;margin-bottom:.2rem}
+  .chips{display:flex;gap:.4rem;flex-wrap:wrap}
+  .ch{padding:.38rem 1rem;border-radius:20px;cursor:pointer;border:1px solid rgba(212,168,67,.18);background:transparent;color:rgba(232,217,176,.45);font-size:.78rem;transition:all .2s;font-family:'DM Sans',sans-serif}
+  .ch.on{border:1.5px solid #d4a843;background:rgba(212,168,67,.12);color:#d4a843}
+  .btn{width:100%;padding:.88rem;background:linear-gradient(135deg,#b8891f,#d4a843,#c49025);border:none;border-radius:10px;color:#0b1e10;font-size:.95rem;font-weight:700;font-family:'Cormorant Garamond',serif;letter-spacing:.07em;cursor:pointer;transition:all .3s;margin-top:.4rem}
+  .btn:disabled{background:rgba(212,168,67,.1);color:rgba(212,168,67,.25);cursor:not-allowed}
+  .btn:not(:disabled):hover{transform:translateY(-1px);box-shadow:0 5px 22px rgba(212,168,67,.3)}
+  .div{height:1px;background:linear-gradient(90deg,transparent,rgba(212,168,67,.18),transparent);margin:1rem 0}
+  .ft{text-align:center;margin-top:1.2rem;color:rgba(232,217,176,.22);font-size:.7rem;font-family:'Amiri',serif}
+</style>
+<div class="w">
+  <div style="max-width:680px;margin:0 auto">
+    <div class="hd">
+      <span class="orn">✦ ☽ ✦</span>
+      <div class="bism">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</div>
+      <h1 class="ttl">Islamic Script Generator</h1>
+      <p class="sub">AI-powered YouTube Shorts & video scripts — Islamic content only</p>
+    </div>
+    <div class="card">
+      <div class="fl">
+        <label class="lb">Topic or Title</label>
+        <input id="topic" placeholder="e.g. The Power of Istighfar, Story of Prophet Musa, Signs of Qiyamah…"/>
+      </div>
+      <div class="fl">
+        <label class="lb">Additional context <span style="color:rgba(212,168,67,.35);font-size:.68rem">(optional)</span></label>
+        <textarea id="extra" placeholder="Specific ayah, target audience, key points, language preference…"></textarea>
+      </div>
+      <div class="div"></div>
+      <div class="fl">
+        <label class="lb">Video Format</label>
+        <div class="g3" id="vg">
+          <button class="o on" data-v="shorts"><span class="oi">⚡</span><strong>YouTube Shorts</strong><div style="font-size:.68rem;opacity:.6;margin-top:.1rem">~60 seconds</div></button>
+          <button class="o" data-v="medium"><span class="oi">🎬</span><strong>Medium Video</strong><div style="font-size:.68rem;opacity:.6;margin-top:.1rem">3–5 minutes</div></button>
+          <button class="o" data-v="long"><span class="oi">📺</span><strong>Full Video</strong><div style="font-size:.68rem;opacity:.6;margin-top:.1rem">8–12 minutes</div></button>
+        </div>
+      </div>
+      <div class="fl">
+        <label class="lb">Content Category</label>
+        <div class="g4" id="cg">
+          <button class="o on" data-c="quran"><span class="oi">📖</span>Quran & Tafsir</button>
+          <button class="o" data-c="hadith"><span class="oi">🌙</span>Hadith & Sunnah</button>
+          <button class="o" data-c="prophets"><span class="oi">⭐</span>Prophets' Stories</button>
+          <button class="o" data-c="history"><span class="oi">🕌</span>Islamic History</button>
+          <button class="o" data-c="fiqh"><span class="oi">⚖️</span>Fiqh & Rulings</button>
+          <button class="o" data-c="dua"><span class="oi">🤲</span>Duas & Dhikr</button>
+          <button class="o" data-c="akhira"><span class="oi">🌟</span>Akhirah & Jannah</button>
+          <button class="o" data-c="modern"><span class="oi">💡</span>Modern Issues</button>
+        </div>
+      </div>
+      <div class="fl">
+        <label class="lb">Tone & Style</label>
+        <div class="chips" id="tg">
+          <button class="ch on" data-t="educational">Educational</button>
+          <button class="ch" data-t="inspirational">Inspirational</button>
+          <button class="ch" data-t="storytelling">Story-based</button>
+          <button class="ch" data-t="reminder">Gentle Reminder</button>
+          <button class="ch" data-t="qa">Q&A Style</button>
+        </div>
+      </div>
+      <button class="btn" id="gb" disabled onclick="go()">✦ Generate Script ✦</button>
+    </div>
+    <div class="ft">آمين — May Allah make your content a sadaqah jaariyah</div>
+  </div>
+</div>
+<script>
+let V='shorts',C='quran',T='educational';
+const VLBL={shorts:'YouTube Short (~60 seconds)',medium:'Medium Video (3–5 minutes)',long:'Full Video (8–12 minutes)'};
+const CLBL={quran:'Quran & Tafsir',hadith:'Hadith & Sunnah',prophets:"Prophets' Stories",history:'Islamic History',fiqh:'Fiqh & Rulings',dua:'Duas & Dhikr',akhira:'Akhirah & Jannah',modern:'Modern Islamic Issues'};
+const TLBL={educational:'Educational',inspirational:'Inspirational',storytelling:'Story-based Narrative',reminder:'Gentle Reminder',qa:'Q&A Style'};
+document.getElementById('vg').onclick=e=>{const b=e.target.closest('[data-v]');if(!b)return;V=b.dataset.v;document.querySelectorAll('[data-v]').forEach(x=>x.classList.toggle('on',x===b))};
+document.getElementById('cg').onclick=e=>{const b=e.target.closest('[data-c]');if(!b)return;C=b.dataset.c;document.querySelectorAll('[data-c]').forEach(x=>x.classList.toggle('on',x===b))};
+document.getElementById('tg').onclick=e=>{const b=e.target.closest('[data-t]');if(!b)return;T=b.dataset.t;document.querySelectorAll('[data-t]').forEach(x=>x.classList.toggle('on',x===b))};
+document.getElementById('topic').oninput=function(){document.getElementById('gb').disabled=!this.value.trim()};
+function go(){
+  const topic=document.getElementById('topic').value.trim();
+  const extra=document.getElementById('extra').value.trim();
+  if(!topic)return;
+  const prompt=`Generate an Islamic YouTube script with these settings:
+- TOPIC: ${topic}
+- FORMAT: ${VLBL[V]}
+- CATEGORY: ${CLBL[C]}
+- TONE: ${TLBL[T]}${extra?'\n- EXTRA CONTEXT: '+extra:''}
+
+Please generate a complete, authentic Islamic script with: title options, hook, full script with timestamps, closing dua, call to action, hashtags, and video description.`;
+  sendPrompt(prompt);
+}
+</script>
