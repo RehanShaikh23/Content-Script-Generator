@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Background -->
+  <rect width="64" height="64" rx="14" fill="#0b1e10"/>
+
+  <!-- Outer geometric ring (8-pointed star border) -->
+  <polygon points="32,6 35.5,14 44,10 40.5,18 49,21 41,24.5 44,33 36,29.5 32,38 28,29.5 20,33 23,24.5 15,21 23.5,18 20,10 28.5,14" fill="none" stroke="#d4a843" stroke-width="1" opacity="0.5"/>
+
+  <!-- Italic M -->
+  <text x="32" y="33" text-anchor="middle" dominant-baseline="middle"
+    font-family="Georgia, 'Times New Roman', serif"
+    font-style="italic"
+    font-weight="bold"
+    font-size="26"
+    fill="#d4a843">M</text>
+
+  <!-- Star (5-pointed) -->
+  <polygon points="46,19 47.5,23.5 52,23.5 48.5,26.5 50,31 46,28 42,31 43.5,26.5 40,23.5 44.5,23.5" fill="#d4a843"/>
+
+  <!-- Bottom ornament dots -->
+  <circle cx="32" cy="56" r="1.5" fill="#d4a843" opacity="0.6"/>
+  <circle cx="26" cy="55" r="1" fill="#d4a843" opacity="0.35"/>
+  <circle cx="38" cy="55" r="1" fill="#d4a843" opacity="0.35"/>
+</svg>
