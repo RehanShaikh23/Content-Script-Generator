@@ -1,0 +1,9 @@
+target/
+.env
+*.env
+.idea/
+*.iml
+node_modules/
+compile_*.txt
+run_*.txt
+startup.txt

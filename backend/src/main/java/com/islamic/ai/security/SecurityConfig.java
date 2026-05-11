@@ -81,6 +81,7 @@ public class SecurityConfig {
                 .dispatcherTypeMatchers(DispatcherType.ASYNC).permitAll()
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/webhooks/**").permitAll()
+                .requestMatchers("/api/health").permitAll()
                 .requestMatchers("/api/subscription/**").authenticated()
                 .anyRequest().authenticated()
             );
