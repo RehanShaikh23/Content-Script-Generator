@@ -326,7 +326,8 @@ public class CalendarGenerationService {
             JsonNode root = objectMapper.readTree(response.getBody());
             return root.path("choices").get(0).path("message").path("content").asText();
         } catch (Exception e) {
-            throw new RuntimeException("AI API call failed: " + e.getMessage(), e);
+            log.error("AI API call failed: {}", e.getMessage(), e);
+            throw new RuntimeException("Content generation is temporarily unavailable. Please try again shortly.");
         }
     }
 

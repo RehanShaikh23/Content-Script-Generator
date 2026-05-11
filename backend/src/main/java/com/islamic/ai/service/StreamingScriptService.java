@@ -215,7 +215,7 @@ public class StreamingScriptService {
                                         try {
                                             emitter.send(SseEmitter.event()
                                                     .name("error")
-                                                    .data(fallbackError.getMessage()));
+                                                    .data("Content generation is temporarily unavailable. Please try again shortly."));
                                             emitter.completeWithError(fallbackError);
                                         } catch (IOException ex) {
                                             log.error("Failed to send error event", ex);
@@ -250,7 +250,7 @@ public class StreamingScriptService {
                 callback.onComplete(script);
             } catch (Exception fallbackError) {
                 try {
-                    emitter.send(SseEmitter.event().name("error").data(fallbackError.getMessage()));
+                    emitter.send(SseEmitter.event().name("error").data("Content generation is temporarily unavailable. Please try again shortly."));
                     emitter.completeWithError(fallbackError);
                 } catch (IOException ex) {
                     log.error("Failed to send fallback error", ex);
