@@ -143,7 +143,8 @@ public class ScriptGenerationService {
             JsonNode root = objectMapper.readTree(response.getBody());
             return root.path("choices").get(0).path("message").path("content").asText();
         } catch (Exception e) {
-            throw new RuntimeException("Failed to generate script: " + e.getMessage(), e);
+            log.error("Script generation failed: {}", e.getMessage(), e);
+            throw new RuntimeException("Content generation is temporarily unavailable. Please try again shortly.");
         }
     }
 
