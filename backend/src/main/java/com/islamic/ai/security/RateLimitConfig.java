@@ -12,6 +12,8 @@ public class RateLimitConfig {
     private Tier login = new Tier(3, 15);
     private Tier signup = new Tier(3, 60);
     private Tier generate = new Tier(10, 60);
+    private Tier report = new Tier(5, 60);
+    private Tier forgotPassword = new Tier(3, 60);
     private Tier general = new Tier(60, 1);
 
     @Data

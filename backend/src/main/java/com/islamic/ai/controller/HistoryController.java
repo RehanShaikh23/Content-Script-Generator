@@ -19,6 +19,8 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class HistoryController {
 
+    private static final int FREE_HISTORY_LIMIT = 30;
+
     private final ScriptHistoryRepository historyRepo;
     private final UserRepository userRepo;
 
@@ -28,8 +30,22 @@ public class HistoryController {
         User user = userRepo.findByEmail(email).orElse(null);
         if (user == null) return ResponseEntity.status(401).body(Map.of("error", "User not found"));
 
+        boolean isPremium = "premium".equalsIgnoreCase(user.getSubscriptionTier())
+                && "ACTIVE".equalsIgnoreCase(user.getSubscriptionStatus());
+
         List<ScriptHistory> history = historyRepo.findByUserIdOrderByCreatedAtDesc(user.getId());
-        return ResponseEntity.ok(history);
+
+        // Free/Standard users see limited history; premium users get everything
+        if (!isPremium && history.size() > FREE_HISTORY_LIMIT) {
+            history = history.subList(0, FREE_HISTORY_LIMIT);
+        }
+
+        return ResponseEntity.ok(Map.of(
+                "history", history,
+                "total", historyRepo.countByUserId(user.getId()),
+                "isPremium", isPremium,
+                "limit", isPremium ? -1 : FREE_HISTORY_LIMIT
+        ));
     }
 
     @DeleteMapping("/{id}")

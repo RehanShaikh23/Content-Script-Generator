@@ -10,4 +10,5 @@ import java.util.UUID;
 public interface ScriptHistoryRepository extends JpaRepository<ScriptHistory, UUID> {
     List<ScriptHistory> findByUserIdOrderByCreatedAtDesc(UUID userId);
     Optional<ScriptHistory> findByIdAndUserId(UUID id, UUID userId);
+    long countByUserId(UUID userId);
 }

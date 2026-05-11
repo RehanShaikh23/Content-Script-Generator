@@ -10,4 +10,6 @@ public class AuthResponse {
     private String fullName;
     private String email;
     private int credits;
+    private String subscriptionTier;
+    private String subscriptionStatus;
 }

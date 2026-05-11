@@ -32,6 +32,35 @@ public class User {
     @Builder.Default
     private int credits = 10;
 
+    @Column(name = "subscription_tier", length = 20)
+    @Builder.Default
+    private String subscriptionTier = "free";
+
+    @Column(name = "subscription_id", length = 100)
+    private String subscriptionId;
+
+    @Column(name = "subscription_status", length = 30)
+    @Builder.Default
+    private String subscriptionStatus = "NONE";
+
+    @Column(name = "cancellation_scheduled_at")
+    private OffsetDateTime cancellationScheduledAt;
+
+    @Column(name = "access_end_date")
+    private OffsetDateTime accessEndDate;
+
+    @Column(name = "cancellation_reason", length = 500)
+    private String cancellationReason;
+
+    @Column(name = "device_id_hash", length = 64)
+    private String deviceIdHash;
+
+    @Column(name = "reset_token", length = 64)
+    private String resetToken;
+
+    @Column(name = "reset_token_expiry")
+    private OffsetDateTime resetTokenExpiry;
+
     @Column(name = "created_at", updatable = false)
     private OffsetDateTime createdAt;
 
