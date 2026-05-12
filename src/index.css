@@ -1322,3 +1322,268 @@ textarea{resize:vertical;min-height:68px}
   .cal-generating{padding:2rem 1.2rem}
 }
 
+/* ═══════════════════════════════════════════════
+   SEO Landing Content
+   ═══════════════════════════════════════════════ */
+
+/* Auth wrapper with landing layout */
+.auth-wrapper--with-landing{
+  flex-direction:column;align-items:center;gap:0;padding-bottom:0
+}
+
+/* Auth card heading styles */
+.auth-card__title{
+  font-family:var(--font);font-size:1.3rem;font-weight:700;
+  color:var(--text-pri);text-align:center;margin-bottom:0.3rem
+}
+.auth-card__subtitle{
+  font-size:0.8rem;color:var(--text-sec);text-align:center;margin-bottom:1.2rem
+}
+
+/* Hero CTA — above the fold */
+.seo-hero-cta{
+  text-align:center;margin-bottom:1.5rem;animation:authFadeIn 0.5s ease-out
+}
+.seo-hero-cta__btn{
+  display:inline-block;padding:0.85rem 2rem;
+  background:var(--text-pri);border:none;border-radius:var(--radius-sm);
+  color:#fff;font-size:0.95rem;font-weight:700;font-family:var(--font);
+  letter-spacing:0.02em;text-decoration:none;cursor:pointer;
+  transition:all 0.25s;box-shadow:var(--shadow-2)
+}
+.seo-hero-cta__btn:hover{
+  background:#2d3136;transform:translateY(-2px);box-shadow:var(--shadow-3)
+}
+.seo-hero-cta__btn:active{transform:translateY(0)}
+.seo-hero-cta__sub{
+  font-size:0.72rem;color:var(--border);margin-top:0.5rem;font-weight:400
+}
+
+/* Landing Section Container */
+.seo-landing{
+  width:100%;max-width:860px;padding:3rem 1.5rem 2rem;
+  margin-top:2rem;
+  border-top:1px solid var(--silver);
+  animation:authFadeIn 0.6s ease-out
+}
+.seo-landing--compact{padding-top:2rem}
+
+/* Section */
+.seo-section{margin-bottom:2.5rem}
+.seo-section--cta{text-align:center;margin-bottom:1.5rem}
+.seo-section__title{
+  font-family:var(--font);font-size:1.4rem;font-weight:700;
+  color:var(--text-pri);text-align:center;margin-bottom:1rem;
+  letter-spacing:-0.01em
+}
+.seo-section__text{
+  font-size:0.88rem;color:var(--text-sec);line-height:1.75;
+  text-align:center;max-width:640px;margin:0 auto 0.8rem
+}
+.seo-section__text strong{color:var(--text-pri);font-weight:600}
+
+/* Feature Cards Grid */
+.seo-features{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:1rem
+}
+.seo-feature{
+  background:var(--surface);border:1px solid rgba(0,0,0,0.06);
+  border-radius:var(--radius);padding:1.3rem 1.1rem;
+  transition:all 0.25s;box-shadow:var(--shadow-1)
+}
+.seo-feature:hover{
+  border-color:var(--text-sec);transform:translateY(-3px);box-shadow:var(--shadow-2)
+}
+.seo-feature__icon{
+  font-size:1.6rem;display:block;margin-bottom:0.6rem
+}
+.seo-feature__title{
+  font-family:var(--font);font-size:0.88rem;font-weight:700;
+  color:var(--text-pri);margin-bottom:0.4rem
+}
+.seo-feature__text{
+  font-size:0.78rem;color:var(--text-sec);line-height:1.6
+}
+
+/* Audience / Who It's For */
+.seo-audience{
+  display:grid;grid-template-columns:repeat(2,1fr);gap:0.8rem
+}
+.seo-audience__item{
+  display:flex;gap:0.8rem;align-items:flex-start;
+  background:var(--surface);border:1px solid rgba(0,0,0,0.06);
+  border-radius:var(--radius-sm);padding:1rem;
+  transition:all 0.25s;box-shadow:var(--shadow-1)
+}
+.seo-audience__item:hover{
+  border-color:var(--text-sec);transform:translateY(-2px);box-shadow:var(--shadow-2)
+}
+.seo-audience__icon{
+  font-size:1.3rem;flex-shrink:0;width:36px;height:36px;
+  background:var(--bg);border:1px solid var(--silver);border-radius:50%;
+  display:flex;align-items:center;justify-content:center;margin-top:2px
+}
+.seo-audience__title{
+  font-family:var(--font);font-size:0.85rem;font-weight:700;
+  color:var(--text-pri);margin-bottom:0.25rem
+}
+.seo-audience__text{
+  font-size:0.75rem;color:var(--text-sec);line-height:1.6
+}
+
+/* How It Works Steps */
+.seo-steps{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:1rem
+}
+.seo-step{
+  text-align:center;padding:1.2rem 1rem;
+  background:var(--surface);border:1px solid rgba(0,0,0,0.06);
+  border-radius:var(--radius);box-shadow:var(--shadow-1);
+  position:relative
+}
+.seo-step__number{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:36px;height:36px;border-radius:50%;
+  background:var(--text-pri);color:#fff;
+  font-family:var(--font);font-size:1rem;font-weight:700;
+  margin-bottom:0.7rem
+}
+.seo-step__title{
+  font-family:var(--font);font-size:0.88rem;font-weight:700;
+  color:var(--text-pri);margin-bottom:0.4rem
+}
+.seo-step__text{
+  font-size:0.78rem;color:var(--text-sec);line-height:1.6
+}
+
+/* FAQ Accordion */
+.seo-faq{
+  max-width:640px;margin:0 auto;display:flex;flex-direction:column;gap:0.5rem
+}
+.seo-faq__item{
+  background:var(--surface);border:1px solid rgba(0,0,0,0.06);
+  border-radius:var(--radius-sm);overflow:hidden;
+  transition:all 0.25s;box-shadow:var(--shadow-1)
+}
+.seo-faq__item:hover{border-color:var(--silver)}
+.seo-faq__item--open{border-color:var(--text-pri)}
+.seo-faq__question{
+  width:100%;display:flex;justify-content:space-between;align-items:center;
+  background:none;border:none;padding:0.85rem 1rem;cursor:pointer;
+  font-family:var(--font);font-size:0.85rem;font-weight:600;
+  color:var(--text-pri);text-align:left;line-height:1.4;gap:0.8rem
+}
+.seo-faq__chevron{
+  color:var(--text-sec);font-size:1.1rem;font-weight:300;flex-shrink:0;
+  opacity:0.5;transition:opacity 0.2s
+}
+.seo-faq__item:hover .seo-faq__chevron{opacity:1}
+.seo-faq__answer{
+  padding:0 1rem 0.85rem;animation:tipBodyReveal 0.3s ease-out
+}
+.seo-faq__answer p{
+  font-size:0.8rem;color:var(--text-sec);line-height:1.7
+}
+
+/* Benefits (Signup page) */
+.seo-benefits{
+  display:flex;flex-direction:column;gap:0.6rem
+}
+.seo-benefit{
+  display:flex;gap:0.8rem;align-items:flex-start;
+  background:var(--surface);border:1px solid rgba(0,0,0,0.06);
+  border-radius:var(--radius-sm);padding:1rem 1.1rem;
+  transition:all 0.25s;box-shadow:var(--shadow-1)
+}
+.seo-benefit:hover{
+  border-color:var(--text-sec);transform:translateY(-2px);box-shadow:var(--shadow-2)
+}
+.seo-benefit__icon{
+  color:var(--text-pri);font-size:0.9rem;flex-shrink:0;margin-top:2px;
+  width:28px;height:28px;background:var(--bg);border:1px solid var(--silver);
+  border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-weight:700
+}
+.seo-benefit__title{
+  font-family:var(--font);font-size:0.85rem;font-weight:700;
+  color:var(--text-pri);margin-bottom:0.2rem
+}
+.seo-benefit__text{
+  font-size:0.78rem;color:var(--text-sec);line-height:1.6
+}
+
+/* Pricing Preview (Signup page) */
+.seo-section--pricing{text-align:center}
+.seo-pricing{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:0.8rem;
+  max-width:580px;margin:0 auto
+}
+.seo-pricing__card{
+  background:var(--surface);border:1px solid rgba(0,0,0,0.06);
+  border-radius:var(--radius);padding:1.2rem 0.8rem;text-align:center;
+  position:relative;transition:all 0.25s;box-shadow:var(--shadow-1)
+}
+.seo-pricing__card:hover{
+  border-color:var(--text-sec);transform:translateY(-2px);box-shadow:var(--shadow-2)
+}
+.seo-pricing__card--popular{
+  border-color:var(--text-pri);box-shadow:var(--shadow-2)
+}
+.seo-pricing__badge{
+  position:absolute;top:-9px;left:50%;transform:translateX(-50%);
+  background:var(--text-pri);color:#fff;font-size:0.58rem;font-weight:700;
+  padding:0.15rem 0.6rem;border-radius:var(--radius-pill);
+  text-transform:uppercase;letter-spacing:0.08em;white-space:nowrap
+}
+.seo-pricing__name{
+  font-family:var(--font);font-size:0.9rem;font-weight:700;
+  color:var(--text-pri);margin-bottom:0.3rem
+}
+.seo-pricing__price{
+  font-family:var(--font);font-size:1.8rem;font-weight:700;
+  color:var(--text-pri);margin-bottom:0.3rem
+}
+.seo-pricing__price span{
+  font-size:0.7rem;font-weight:400;color:var(--text-sec)
+}
+.seo-pricing__desc{
+  font-size:0.72rem;color:var(--text-sec)
+}
+
+/* SEO Footer */
+.seo-footer{
+  text-align:center;padding-top:1.5rem;border-top:1px solid rgba(0,0,0,0.06);
+  margin-top:1rem
+}
+.seo-footer p{font-size:0.72rem;color:var(--border);margin-bottom:0.3rem}
+.seo-footer__tagline{
+  font-size:0.68rem;color:var(--border);line-height:1.6;
+  max-width:520px;margin:0 auto;opacity:0.7
+}
+
+/* Footer copyright */
+.footer__seo-links{
+  margin-top:0.5rem
+}
+.footer__copyright{
+  font-size:0.68rem;color:var(--border);opacity:0.7
+}
+
+/* SEO Landing Responsive */
+@media(max-width:768px){
+  .seo-features{grid-template-columns:repeat(2,1fr)}
+  .seo-audience{grid-template-columns:1fr}
+  .seo-steps{grid-template-columns:1fr;gap:0.8rem}
+  .seo-pricing{grid-template-columns:repeat(3,1fr);gap:0.5rem}
+  .seo-section__title{font-size:1.2rem}
+  .seo-landing{padding:2rem 1rem 1.5rem}
+}
+@media(max-width:480px){
+  .seo-features{grid-template-columns:1fr}
+  .seo-pricing{grid-template-columns:1fr;max-width:280px}
+  .seo-hero-cta__btn{font-size:0.85rem;padding:0.75rem 1.5rem}
+  .seo-section__title{font-size:1.1rem}
+  .seo-section__text{font-size:0.82rem}
+  .auth-wrapper--with-landing{padding:1.5rem 1rem 0}
+}
+
