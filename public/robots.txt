@@ -1,0 +1,12 @@
+# Islamic Script Generator — Muslim Empire
+# https://content-script-generator-lime.vercel.app/
+
+User-agent: *
+Allow: /
+Allow: /login
+Allow: /signup
+Disallow: /reset-password
+Disallow: /forgot-password
+
+# Sitemap
+Sitemap: https://content-script-generator-lime.vercel.app/sitemap.xml
