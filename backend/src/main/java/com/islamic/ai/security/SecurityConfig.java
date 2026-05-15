@@ -55,7 +55,7 @@ public class SecurityConfig {
                         .policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN)
                     )
                     .contentSecurityPolicy(csp -> csp                 // Content-Security-Policy
-                        .policyDirectives("default-src 'self'; script-src 'self' https://www.paypal.com https://www.sandbox.paypal.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://www.paypalobjects.com; connect-src 'self' https://www.paypal.com https://www.sandbox.paypal.com " + allowedOrigins + "; frame-src https://www.paypal.com https://www.sandbox.paypal.com")
+                        .policyDirectives("default-src 'self'; script-src 'self' https://www.paypal.com https://www.sandbox.paypal.com https://cdn.jsdelivr.net https://checkout.dodopayments.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://www.paypalobjects.com https://checkout.dodopayments.com; connect-src 'self' https://www.paypal.com https://www.sandbox.paypal.com https://checkout.dodopayments.com https://test.dodopayments.com https://live.dodopayments.com " + allowedOrigins + "; frame-src https://www.paypal.com https://www.sandbox.paypal.com https://checkout.dodopayments.com")
                     );
                 // Permissions-Policy (using header writer since .permissionsPolicy() is deprecated for removal)
                 headers.addHeaderWriter(
