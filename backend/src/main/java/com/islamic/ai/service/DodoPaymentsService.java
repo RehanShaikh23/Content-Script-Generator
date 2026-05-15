@@ -54,9 +54,8 @@ public class DodoPaymentsService {
             headers.setBearerAuth(apiKey);
             headers.setContentType(MediaType.APPLICATION_JSON);
 
-            // Build the checkout session payload
+            // Build the checkout payload per Dodo API docs: POST /checkouts
             ObjectNode payload = objectMapper.createObjectNode();
-            payload.put("payment_link", false);
 
             // Product cart — single subscription item
             ArrayNode items = objectMapper.createArrayNode();
@@ -74,8 +73,8 @@ public class DodoPaymentsService {
             }
             payload.set("customer", customer);
 
-            // Billing country for UPI
-            payload.put("billing_country", "IN");
+            // Return URL (Dodo redirects here after payment)
+            payload.put("return_url", frontendUrl + "?subscription=success&tier=" + tier);
 
             // Metadata for webhook correlation
             ObjectNode metadata = objectMapper.createObjectNode();
@@ -83,34 +82,41 @@ public class DodoPaymentsService {
             metadata.put("tier", tier);
             payload.set("metadata", metadata);
 
-            // Success and failure URLs
-            payload.put("success_url", frontendUrl + "?subscription=success&tier=" + tier);
-            payload.put("failure_url", frontendUrl + "?subscription=failed");
-
-            log.info("🔵 Creating Dodo checkout session: tier={} email={} productId={}",
-                    tier, customerEmail, productId);
+            log.info("🔵 Creating Dodo checkout: tier={} email={} productId={} url={}",
+                    tier, customerEmail, productId, baseUrl + "/checkouts");
+            log.info("🔵 Checkout payload: {}", payload.toString());
 
             ResponseEntity<String> response = restTemplate.exchange(
-                    baseUrl + "/checkout-sessions",
+                    baseUrl + "/checkouts",
                     HttpMethod.POST,
                     new HttpEntity<>(payload.toString(), headers),
                     String.class
             );
 
+            log.info("🔵 Dodo response: {}", response.getBody());
+
             JsonNode responseBody = objectMapper.readTree(response.getBody());
-            String checkoutUrl = responseBody.path("checkout_url").asText("");
+
+            // Try multiple possible field names for the checkout URL
+            String checkoutUrl = responseBody.path("url").asText("");
+            if (checkoutUrl.isEmpty()) {
+                checkoutUrl = responseBody.path("checkout_url").asText("");
+            }
+            if (checkoutUrl.isEmpty()) {
+                checkoutUrl = responseBody.path("payment_link").asText("");
+            }
 
             if (checkoutUrl.isEmpty()) {
-                log.error("❌ Dodo checkout session response missing checkout_url: {}",
+                log.error("❌ Dodo checkout response missing URL. Full response: {}",
                         response.getBody());
                 throw new RuntimeException("Checkout URL not found in Dodo response");
             }
 
-            log.info("✅ Dodo checkout session created: url={}", checkoutUrl);
+            log.info("✅ Dodo checkout created: url={}", checkoutUrl);
             return checkoutUrl;
 
         } catch (Exception e) {
-            log.error("❌ Failed to create Dodo checkout session: {}", e.getMessage(), e);
+            log.error("❌ Failed to create Dodo checkout: {}", e.getMessage(), e);
             throw new RuntimeException("Failed to create checkout session: " + e.getMessage(), e);
         }
     }
