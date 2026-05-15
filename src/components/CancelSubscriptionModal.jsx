@@ -5,7 +5,7 @@ import { apiPost } from '../api';
 const PLANS = {
   standard: {
     name: 'Standard',
-    price: '$5/month',
+    price: '₹399/month',
     benefits: [
       'Up to 50 AI-generated scripts per month',
       'YouTube Shorts & Reels formats',
@@ -16,7 +16,7 @@ const PLANS = {
   },
   premium: {
     name: 'Premium',
-    price: '$15/month',
+    price: '₹1,199/month',
     benefits: [
       'Unlimited AI-generated scripts',
       'All video formats (Shorts, Reels, Long-form)',

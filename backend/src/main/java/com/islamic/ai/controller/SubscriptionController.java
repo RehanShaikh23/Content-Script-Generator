@@ -2,6 +2,7 @@ package com.islamic.ai.controller;
 
 import com.islamic.ai.model.User;
 import com.islamic.ai.repository.UserRepository;
+import com.islamic.ai.service.DodoPaymentsService;
 import com.islamic.ai.service.EmailService;
 import com.islamic.ai.service.PayPalService;
 import com.islamic.ai.security.SecurityAuditLogger;
@@ -27,6 +28,7 @@ public class SubscriptionController {
     private static final Logger log = LoggerFactory.getLogger(SubscriptionController.class);
 
     private final PayPalService payPalService;
+    private final DodoPaymentsService dodoPaymentsService;
     private final UserRepository userRepository;
     private final EmailService emailService;
     private final SecurityAuditLogger auditLogger;
@@ -66,6 +68,7 @@ public class SubscriptionController {
         user.setSubscriptionTier(tier);
         user.setSubscriptionId(subscriptionId);
         user.setSubscriptionStatus("ACTIVE");
+        user.setPaymentProvider("paypal");
 
         // Clear any previous cancellation state
         user.setCancellationScheduledAt(null);
@@ -98,7 +101,7 @@ public class SubscriptionController {
 
     /**
      * Cancel the current user's subscription.
-     * Calls PayPal to cancel, then marks the subscription as CANCELLATION_SCHEDULED.
+     * Routes to PayPal or Dodo based on the user's payment provider.
      * Access continues until the end of the current billing cycle.
      */
     @PostMapping("/cancel")
@@ -126,17 +129,27 @@ public class SubscriptionController {
         }
 
         String reason = body.getOrDefault("reason", "");
+        String provider = user.getPaymentProvider() != null ? user.getPaymentProvider() : "paypal";
 
-        // Get the end date BEFORE cancelling (PayPal removes it after cancel)
-        String endDateStr = payPalService.getSubscriptionEndDate(user.getSubscriptionId());
+        // Get the end date and cancel via the appropriate provider
+        String endDateStr = null;
+        boolean cancelled = false;
 
-        // Call PayPal to cancel
-        boolean cancelled = payPalService.cancelSubscription(user.getSubscriptionId(), reason);
+        if ("dodo".equals(provider)) {
+            endDateStr = dodoPaymentsService.getSubscriptionEndDate(user.getSubscriptionId());
+            cancelled = dodoPaymentsService.cancelSubscription(user.getSubscriptionId());
+        } else {
+            // Legacy PayPal path
+            endDateStr = payPalService.getSubscriptionEndDate(user.getSubscriptionId());
+            cancelled = payPalService.cancelSubscription(user.getSubscriptionId(), reason);
+        }
+
         if (!cancelled) {
-            log.error("❌ PayPal cancel API failed for user={} subId={}", email, user.getSubscriptionId());
+            log.error("❌ Cancel API failed for user={} subId={} provider={}",
+                    email, user.getSubscriptionId(), provider);
             return ResponseEntity.internalServerError().body(Map.of(
                     "success", false,
-                    "error", "Failed to cancel subscription with PayPal. Please try again or contact support."
+                    "error", "Failed to cancel subscription. Please try again or contact support."
             ));
         }
 
@@ -173,7 +186,8 @@ public class SubscriptionController {
         String formattedDate = accessEndDate.format(DateTimeFormatter.ofPattern("MMMM d, yyyy"));
         emailService.sendCancellationEmail(email, user.getFullName(), planName, formattedDate);
 
-        log.info("📧 Cancellation scheduled: user={} tier={} accessEndDate={}", email, planName, formattedDate);
+        log.info("📧 Cancellation scheduled: user={} tier={} accessEndDate={} provider={}",
+                email, planName, formattedDate, provider);
 
         Map<String, Object> response = new HashMap<>();
         response.put("success", true);
@@ -188,6 +202,8 @@ public class SubscriptionController {
     /**
      * Reactivate a subscription that has been scheduled for cancellation.
      * Only works if the access end date hasn't passed yet.
+     * Note: Reactivation is only supported for PayPal subscriptions.
+     * For Dodo subscriptions, the user needs to create a new subscription.
      */
     @PostMapping("/reactivate")
     public ResponseEntity<?> reactivateSubscription(HttpServletRequest request) {
@@ -211,7 +227,17 @@ public class SubscriptionController {
             ));
         }
 
-        // Call PayPal to reactivate
+        String provider = user.getPaymentProvider() != null ? user.getPaymentProvider() : "paypal";
+
+        if ("dodo".equals(provider)) {
+            // Dodo doesn't support reactivation the same way — user needs to create a new subscription
+            return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "error", "Dodo subscriptions cannot be reactivated after cancellation. Please create a new subscription."
+            ));
+        }
+
+        // Call PayPal to reactivate (legacy path)
         boolean reactivated = payPalService.reactivateSubscription(
                 user.getSubscriptionId(),
                 "Customer requested reactivation"
@@ -221,7 +247,7 @@ public class SubscriptionController {
             log.error("❌ PayPal reactivate API failed for user={} subId={}", email, user.getSubscriptionId());
             return ResponseEntity.internalServerError().body(Map.of(
                     "success", false,
-                    "error", "Failed to reactivate subscription with PayPal. Please try again or contact support."
+                    "error", "Failed to reactivate subscription. Please try again or contact support."
             ));
         }
 
@@ -260,6 +286,7 @@ public class SubscriptionController {
         response.put("status", user.getSubscriptionStatus());
         response.put("credits", user.getCredits());
         response.put("subscriptionId", user.getSubscriptionId());
+        response.put("paymentProvider", user.getPaymentProvider());
 
         // Include cancellation details if applicable
         if (user.getAccessEndDate() != null) {

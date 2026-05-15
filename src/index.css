@@ -231,8 +231,16 @@ textarea{resize:vertical;min-height:68px}
 .pricing-card__benefit{font-size:0.78rem;color:var(--text-sec);padding:0.35rem 0;display:flex;align-items:flex-start;gap:0.5rem;line-height:1.4}
 .pricing-card__benefit+.pricing-card__benefit{border-top:1px solid rgba(0,0,0,0.04)}
 .pricing-card__check{color:var(--text-pri);font-size:0.72rem;font-weight:700;flex-shrink:0;margin-top:1px}
-.pricing-card__paypal{min-height:50px}
-.pricing-card__sdk-note{font-size:0.72rem;color:var(--border);text-align:center;margin-top:0.5rem}
+.pricing-card__subscribe-btn{width:100%;padding:0.75rem 1rem;background:var(--text-pri);border:none;color:#fff;border-radius:var(--radius-sm);font-size:0.85rem;font-weight:600;font-family:var(--font);cursor:pointer;transition:all 0.25s;display:flex;align-items:center;justify-content:center;gap:0.5rem;letter-spacing:0.02em}
+.pricing-card__subscribe-btn:hover:not(:disabled){background:#2d3136;transform:translateY(-2px);box-shadow:var(--shadow-2)}
+.pricing-card__subscribe-btn:active:not(:disabled){transform:translateY(0)}
+.pricing-card__subscribe-btn:disabled{opacity:0.5;cursor:not-allowed;transform:none}
+.pricing-card__subscribe-icon{font-size:0.9rem}
+.pricing-card__activating-container{display:flex;flex-direction:column;align-items:center;gap:0.5rem;padding:0.8rem 0}
+.pricing-card__spinner{width:24px;height:24px;border:2.5px solid var(--silver);border-top-color:var(--text-pri);border-radius:50%;animation:spinnerRotate 0.8s linear infinite}
+@keyframes spinnerRotate{to{transform:rotate(360deg)}}
+.pricing-modal__payment-methods{margin-top:0.6rem}
+.pricing-modal__payment-badge{display:inline-block;background:var(--bg);border:1px solid var(--silver);border-radius:var(--radius-pill);padding:0.3rem 1rem;font-size:0.72rem;color:var(--text-sec);font-weight:500;font-family:var(--font);letter-spacing:0.01em}
 
 @keyframes pricingFadeIn{from{opacity:0}to{opacity:1}}
 @keyframes pricingSlideIn{from{opacity:0;transform:translate(-50%,-46%)}to{opacity:1;transform:translate(-50%,-50%)}}

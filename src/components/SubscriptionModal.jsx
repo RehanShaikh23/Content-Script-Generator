@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { apiPost } from '../api';
 import SubscriptionSuccessModal from './SubscriptionSuccessModal';
@@ -7,9 +7,8 @@ const PLANS = [
   {
     id: 'standard',
     name: 'Standard',
-    // ⚠️ SANDBOX plan ID — replace with live ID for production
-    planId: 'P-3RC21604VW709292JNH3DBOQ',
-    price: '5',
+    price: '399',
+    currency: '₹',
     period: 'month',
     benefits: [
       'Up to 50 AI-generated scripts per month',
@@ -22,9 +21,8 @@ const PLANS = [
   {
     id: 'premium',
     name: 'Premium',
-    // ⚠️ SANDBOX plan ID — replace with live ID for production
-    planId: 'P-56E7053043019235UNH3DBXQ',
-    price: '15',
+    price: '1,199',
+    currency: '₹',
     period: 'month',
     popular: true,
     benefits: [
@@ -40,18 +38,11 @@ const PLANS = [
   },
 ];
 
-// ────────────────────────────────────────────────────────────────
-// 🔑  PRODUCTION PLAN IDS (uncomment when going live):
-// Standard: P-78B67402K5804231VNG36P2A
-// Premium:  P-6RA473546U631442PNG36P2I
-// ────────────────────────────────────────────────────────────────
-
 export default function SubscriptionModal({ isOpen, onClose, onCancelSubscription }) {
   const {
     token, subscriptionTier, isPremium, isCancellationScheduled,
     accessEndDate, refreshSubscription, updateSubscription
   } = useAuth();
-  const paypalRefs = useRef({});
   const [activating, setActivating] = useState(null);
   const [error, setError] = useState('');
   const [reactivating, setReactivating] = useState(false);
@@ -66,82 +57,6 @@ export default function SubscriptionModal({ isOpen, onClose, onCancelSubscriptio
       })
     : null;
 
-  useEffect(() => {
-    if (!isOpen) return;
-
-    // Small delay to let the DOM render the containers
-    const timer = setTimeout(() => {
-      PLANS.forEach((plan) => {
-        const container = paypalRefs.current[plan.id];
-        if (!container || container.hasChildNodes()) return;
-
-        if (window.paypal) {
-          window.paypal.Buttons({
-            style: {
-              shape: 'pill',
-              color: 'gold',
-              layout: 'vertical',
-              label: 'subscribe',
-            },
-            createSubscription(data, actions) {
-              return actions.subscription.create({
-                plan_id: plan.planId,
-              });
-            },
-            async onApprove(data) {
-              setActivating(plan.id);
-              setError('');
-
-              try {
-                // Tell backend to verify & activate the subscription
-                const result = await apiPost('/subscription/activate', {
-                  subscriptionId: data.subscriptionID,
-                  planId: plan.planId,
-                  tier: plan.id,
-                }, token);
-
-                if (result.success) {
-                  // Instantly update UI state — no page reload needed
-                  updateSubscription(
-                    result.tier || plan.id,
-                    result.status || 'ACTIVE',
-                    result.credits
-                  );
-
-                  // Also refresh from server for consistency
-                  await refreshSubscription();
-
-                  // Show success modal instead of alert()
-                  setSuccessData({
-                    planName: plan.name,
-                    subscriptionId: data.subscriptionID,
-                    nextBillingDate: result.nextBillingDate || null,
-                  });
-                } else {
-                  setError(result.error || 'Subscription verification failed. Please contact support.');
-                }
-              } catch (err) {
-                console.error('Subscription activation error:', err);
-                setError(err.message || 'Failed to activate subscription. Please contact support.');
-              } finally {
-                setActivating(null);
-              }
-            },
-            onCancel() {
-              console.log(`Subscription cancelled for ${plan.name}`);
-            },
-            onError(err) {
-              console.error('PayPal error:', err);
-              setError('Something went wrong with PayPal. Please try again.');
-            },
-          }).render(container);
-        }
-      });
-    }, 100);
-
-    return () => clearTimeout(timer);
-  }, [isOpen, onClose, token, refreshSubscription, updateSubscription]);
-
   // Clear state when modal closes
   useEffect(() => {
     if (!isOpen) {
@@ -151,13 +66,116 @@ export default function SubscriptionModal({ isOpen, onClose, onCancelSubscriptio
     }
   }, [isOpen]);
 
+  // Listen for Dodo checkout completion via URL params
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const subResult = urlParams.get('subscription');
+    const tier = urlParams.get('tier');
+
+    if (subResult === 'success' && tier) {
+      // Clean up URL params
+      const url = new URL(window.location);
+      url.searchParams.delete('subscription');
+      url.searchParams.delete('tier');
+      window.history.replaceState({}, '', url);
+
+      // Refresh subscription status from server
+      refreshSubscription().then(() => {
+        setSuccessData({
+          planName: tier.charAt(0).toUpperCase() + tier.slice(1),
+          subscriptionId: '',
+          nextBillingDate: null,
+        });
+      });
+    }
+  }, [isOpen, refreshSubscription]);
+
+  /**
+   * Open Dodo Payments checkout overlay for the selected plan.
+   */
+  async function handleDodoCheckout(plan) {
+    setActivating(plan.id);
+    setError('');
+
+    try {
+      const result = await apiPost('/dodo/checkout-session', { tier: plan.id }, token);
+
+      if (!result.success || !result.checkoutUrl) {
+        setError(result.error || 'Failed to create checkout session. Please try again.');
+        setActivating(null);
+        return;
+      }
+
+      // Open Dodo overlay checkout
+      if (window.DodoPayments) {
+        window.DodoPayments.Checkout.open({
+          link: result.checkoutUrl,
+        });
+
+        // Poll for subscription activation after checkout
+        startActivationPolling(plan);
+      } else {
+        // Fallback: open in new tab
+        window.open(result.checkoutUrl, '_blank');
+        startActivationPolling(plan);
+      }
+    } catch (err) {
+      console.error('Checkout session error:', err);
+      setError(err.message || 'Failed to start checkout. Please try again.');
+      setActivating(null);
+    }
+  }
+
+  /**
+   * Poll the subscription status endpoint to detect when the webhook activates the user.
+   * Polls every 3s for up to 2 minutes.
+   */
+  function startActivationPolling(plan) {
+    let attempts = 0;
+    const maxAttempts = 40; // 40 * 3s = 2 minutes
+
+    const poller = setInterval(async () => {
+      attempts++;
+      try {
+        await refreshSubscription();
+
+        // Check if the subscription was activated
+        const currentTier = localStorage.getItem('subscriptionTier');
+        const currentStatus = localStorage.getItem('subscriptionStatus');
+
+        if (currentTier === plan.id && currentStatus === 'ACTIVE') {
+          clearInterval(poller);
+          setActivating(null);
+          setSuccessData({
+            planName: plan.name,
+            subscriptionId: '',
+            nextBillingDate: null,
+          });
+        }
+      } catch (e) {
+        // Ignore polling errors
+      }
+
+      if (attempts >= maxAttempts) {
+        clearInterval(poller);
+        setActivating(null);
+        // Don't show error — the webhook might just be delayed
+      }
+    }, 3000);
+
+    // Clean up on unmount
+    return () => clearInterval(poller);
+  }
+
   // Handle success modal close — dismiss both modals
   function handleSuccessClose() {
     setSuccessData(null);
     onClose();
   }
 
-  // Handle reactivation
+  // Handle reactivation (legacy PayPal path)
   async function handleReactivate() {
     setReactivating(true);
     setError('');
@@ -198,6 +216,14 @@ export default function SubscriptionModal({ isOpen, onClose, onCancelSubscriptio
           <p className="pricing-modal__subtitle">
             Unlock the full power of AI-driven Islamic content creation
           </p>
+
+          {/* Payment methods badge */}
+          <div className="pricing-modal__payment-methods">
+            <span className="pricing-modal__payment-badge">
+              💳 UPI &bull; Google Pay &bull; PhonePe &bull; Cards
+            </span>
+          </div>
+
           {isPremium && !isCancellationScheduled && (
             <p className="pricing-modal__current-plan pricing-modal__current-plan--premium">
               ⚡ You have <strong>Premium</strong> — all features are unlocked!
@@ -247,7 +273,7 @@ export default function SubscriptionModal({ isOpen, onClose, onCancelSubscriptio
                 )}
                 <h3 className="pricing-card__name">{plan.name}</h3>
                 <div className="pricing-card__price">
-                  <span className="pricing-card__currency">$</span>
+                  <span className="pricing-card__currency">{plan.currency}</span>
                   <span className="pricing-card__amount">{plan.price}</span>
                   <span className="pricing-card__period">/{plan.period}</span>
                 </div>
@@ -261,9 +287,12 @@ export default function SubscriptionModal({ isOpen, onClose, onCancelSubscriptio
                 </ul>
 
                 {activating === plan.id ? (
-                  <p className="pricing-card__activating">
-                    ⏳ Verifying your subscription...
-                  </p>
+                  <div className="pricing-card__activating-container">
+                    <div className="pricing-card__spinner" />
+                    <p className="pricing-card__activating">
+                      ⏳ Verifying your subscription...
+                    </p>
+                  </div>
                 ) : isCurrentPlan ? (
                   <div className="pricing-card__current-actions">
                     {isCancellationScheduled ? (
@@ -290,16 +319,14 @@ export default function SubscriptionModal({ isOpen, onClose, onCancelSubscriptio
                     )}
                   </div>
                 ) : (
-                  <div
-                    className="pricing-card__paypal"
-                    ref={(el) => (paypalRefs.current[plan.id] = el)}
-                  />
-                )}
-
-                {!window.paypal && !isCurrentPlan && (
-                  <p className="pricing-card__sdk-note">
-                    PayPal is loading…
-                  </p>
+                  <button
+                    className="pricing-card__subscribe-btn"
+                    onClick={() => handleDodoCheckout(plan)}
+                    disabled={activating !== null}
+                  >
+                    <span className="pricing-card__subscribe-icon">🔐</span>
+                    Subscribe with UPI / Card
+                  </button>
                 )}
               </div>
             );

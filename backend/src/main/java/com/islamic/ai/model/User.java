@@ -52,6 +52,13 @@ public class User {
     @Column(name = "cancellation_reason", length = 500)
     private String cancellationReason;
 
+    @Column(name = "payment_provider", length = 20)
+    @Builder.Default
+    private String paymentProvider = "none";  // "paypal", "dodo", or "none"
+
+    @Column(name = "dodo_customer_id", length = 100)
+    private String dodoCustomerId;
+
     @Column(name = "device_id_hash", length = 64)
     private String deviceIdHash;
 
