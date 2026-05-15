@@ -1,17 +1,15 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { apiPost } from '../api';
 import SubscriptionSuccessModal from './SubscriptionSuccessModal';
 
-// ── Plan definitions for both providers ──
+// ── Plan definitions ──
 const PLANS = [
   {
     id: 'standard',
     name: 'Standard',
-    // PayPal plan IDs (USD)
-    paypalPlanId: 'P-78B67402K5804231VNG36P2A',
-    priceUSD: '5',
-    priceINR: '399',
+    price: '399',
+    currency: '₹',
     period: 'month',
     benefits: [
       'Up to 50 AI-generated scripts per month',
@@ -24,9 +22,8 @@ const PLANS = [
   {
     id: 'premium',
     name: 'Premium',
-    paypalPlanId: 'P-6RA473546U631442PNG36P2I',
-    priceUSD: '15',
-    priceINR: '1,199',
+    price: '1,199',
+    currency: '₹',
     period: 'month',
     popular: true,
     benefits: [
@@ -42,36 +39,16 @@ const PLANS = [
   },
 ];
 
-/**
- * Detect if user is likely from India (for defaulting to UPI tab).
- */
-function detectIndianUser() {
-  try {
-    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
-    if (tz.startsWith('Asia/Kolkata') || tz.startsWith('Asia/Calcutta')) return true;
-    const lang = navigator.language || '';
-    if (lang.startsWith('hi') || lang.startsWith('bn') || lang.startsWith('ta') ||
-        lang.startsWith('te') || lang.startsWith('mr') || lang.startsWith('gu')) return true;
-  } catch {}
-  return false;
-}
-
 export default function SubscriptionModal({ isOpen, onClose, onCancelSubscription }) {
   const {
     token, subscriptionTier, isPremium, isCancellationScheduled,
     accessEndDate, refreshSubscription, updateSubscription
   } = useAuth();
 
-  const paypalRefs = useRef({});
   const [activating, setActivating] = useState(null);
   const [error, setError] = useState('');
   const [reactivating, setReactivating] = useState(false);
   const [successData, setSuccessData] = useState(null);
-
-  // Payment method toggle: 'upi' (Dodo) or 'paypal'
-  const [paymentMethod, setPaymentMethod] = useState(
-    detectIndianUser() ? 'upi' : 'paypal'
-  );
 
   // Format access end date
   const formattedEndDate = accessEndDate
@@ -79,85 +56,6 @@ export default function SubscriptionModal({ isOpen, onClose, onCancelSubscriptio
         year: 'numeric', month: 'long', day: 'numeric',
       })
     : null;
-
-  // ── Render PayPal buttons when PayPal tab is active ──
-  useEffect(() => {
-    if (!isOpen || paymentMethod !== 'paypal') return;
-
-    const timer = setTimeout(() => {
-      PLANS.forEach((plan) => {
-        const container = paypalRefs.current[plan.id];
-        if (!container || container.hasChildNodes()) return;
-
-        if (window.paypal) {
-          window.paypal.Buttons({
-            style: {
-              shape: 'pill',
-              color: 'gold',
-              layout: 'vertical',
-              label: 'subscribe',
-            },
-            createSubscription(data, actions) {
-              return actions.subscription.create({
-                plan_id: plan.paypalPlanId,
-              });
-            },
-            async onApprove(data) {
-              setActivating(plan.id);
-              setError('');
-
-              try {
-                const result = await apiPost('/subscription/activate', {
-                  subscriptionId: data.subscriptionID,
-                  planId: plan.paypalPlanId,
-                  tier: plan.id,
-                }, token);
-
-                if (result.success) {
-                  updateSubscription(
-                    result.tier || plan.id,
-                    result.status || 'ACTIVE',
-                    result.credits
-                  );
-                  await refreshSubscription();
-                  setSuccessData({
-                    planName: plan.name,
-                    subscriptionId: data.subscriptionID,
-                    nextBillingDate: result.nextBillingDate || null,
-                  });
-                } else {
-                  setError(result.error || 'Subscription verification failed.');
-                }
-              } catch (err) {
-                console.error('PayPal activation error:', err);
-                setError(err.message || 'Failed to activate subscription.');
-              } finally {
-                setActivating(null);
-              }
-            },
-            onCancel() {
-              console.log(`PayPal subscription cancelled for ${plan.name}`);
-            },
-            onError(err) {
-              console.error('PayPal error:', err);
-              setError('Something went wrong with PayPal. Please try again.');
-            },
-          }).render(container);
-        }
-      });
-    }, 100);
-
-    return () => clearTimeout(timer);
-  }, [isOpen, paymentMethod, token, refreshSubscription, updateSubscription]);
-
-  // Clear PayPal button containers when switching away from PayPal
-  useEffect(() => {
-    if (paymentMethod !== 'paypal') {
-      Object.values(paypalRefs.current).forEach(container => {
-        if (container) container.innerHTML = '';
-      });
-    }
-  }, [paymentMethod]);
 
   // Clear state when modal closes
   useEffect(() => {
@@ -191,8 +89,8 @@ export default function SubscriptionModal({ isOpen, onClose, onCancelSubscriptio
     }
   }, [isOpen, refreshSubscription]);
 
-  // ── Dodo Checkout (UPI/Card) ──
-  async function handleDodoCheckout(plan) {
+  // ── Dodo Checkout ──
+  async function handleCheckout(plan) {
     setActivating(plan.id);
     setError('');
 
@@ -205,6 +103,7 @@ export default function SubscriptionModal({ isOpen, onClose, onCancelSubscriptio
         return;
       }
 
+      // Open Dodo overlay checkout or redirect
       if (window.DodoPayments) {
         window.DodoPayments.Checkout.open({ link: result.checkoutUrl });
         startActivationPolling(plan);
@@ -213,7 +112,7 @@ export default function SubscriptionModal({ isOpen, onClose, onCancelSubscriptio
         startActivationPolling(plan);
       }
     } catch (err) {
-      console.error('Dodo checkout error:', err);
+      console.error('Checkout error:', err);
       setError(err.message || 'Failed to start checkout.');
       setActivating(null);
     }
@@ -320,22 +219,6 @@ export default function SubscriptionModal({ isOpen, onClose, onCancelSubscriptio
               ✦ Current plan: <strong>{subscriptionTier.charAt(0).toUpperCase() + subscriptionTier.slice(1)}</strong>
             </p>
           )}
-
-          {/* ── Payment Method Toggle ── */}
-          <div className="pricing-modal__payment-toggle">
-            <button
-              className={`pricing-modal__toggle-btn ${paymentMethod === 'upi' ? 'pricing-modal__toggle-btn--active' : ''}`}
-              onClick={() => setPaymentMethod('upi')}
-            >
-              🇮🇳 UPI / Indian Cards
-            </button>
-            <button
-              className={`pricing-modal__toggle-btn ${paymentMethod === 'paypal' ? 'pricing-modal__toggle-btn--active' : ''}`}
-              onClick={() => setPaymentMethod('paypal')}
-            >
-              💳 PayPal / International
-            </button>
-          </div>
         </div>
 
         {error && (
@@ -347,8 +230,6 @@ export default function SubscriptionModal({ isOpen, onClose, onCancelSubscriptio
         <div className="pricing-grid">
           {PLANS.map((plan) => {
             const isCurrentPlan = subscriptionTier === plan.id;
-            const price = paymentMethod === 'upi' ? plan.priceINR : plan.priceUSD;
-            const currency = paymentMethod === 'upi' ? '₹' : '$';
 
             return (
               <div
@@ -363,8 +244,8 @@ export default function SubscriptionModal({ isOpen, onClose, onCancelSubscriptio
                 )}
                 <h3 className="pricing-card__name">{plan.name}</h3>
                 <div className="pricing-card__price">
-                  <span className="pricing-card__currency">{currency}</span>
-                  <span className="pricing-card__amount">{price}</span>
+                  <span className="pricing-card__currency">{plan.currency}</span>
+                  <span className="pricing-card__amount">{plan.price}</span>
                   <span className="pricing-card__period">/{plan.period}</span>
                 </div>
                 <ul className="pricing-card__benefits">
@@ -408,36 +289,28 @@ export default function SubscriptionModal({ isOpen, onClose, onCancelSubscriptio
                       </>
                     )}
                   </div>
-                ) : paymentMethod === 'upi' ? (
-                  /* ── Dodo/UPI Button ── */
+                ) : (
                   <button
                     className="pricing-card__subscribe-btn"
-                    onClick={() => handleDodoCheckout(plan)}
+                    onClick={() => handleCheckout(plan)}
                     disabled={activating !== null}
                   >
                     <span className="pricing-card__subscribe-icon">🔐</span>
-                    Pay with UPI / Card
+                    Subscribe Now
                   </button>
-                ) : (
-                  /* ── PayPal Button ── */
-                  <>
-                    <div
-                      className="pricing-card__paypal"
-                      ref={(el) => (paypalRefs.current[plan.id] = el)}
-                    />
-                    {!window.paypal && (
-                      <p className="pricing-card__sdk-note">
-                        PayPal is loading…
-                      </p>
-                    )}
-                  </>
                 )}
               </div>
             );
           })}
         </div>
 
-        {/* Cancel link for paid plans at bottom */}
+        <div className="pricing-modal__payment-methods">
+          <span className="pricing-modal__payment-badge">
+            💳 UPI · Google Pay · PhonePe · Cards · Net Banking
+          </span>
+        </div>
+
+        {/* Cancel link for paid plans */}
         {subscriptionTier !== 'free' && !isCancellationScheduled && onCancelSubscription && (
           <div className="pricing-modal__footer-cancel">
             <button
