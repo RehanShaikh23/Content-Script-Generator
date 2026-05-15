@@ -1,6 +1,9 @@
 import { useState, useMemo } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { apiPost } from '../api';
+import LandingNavbar from '../components/landing/LandingNavbar';
+import LandingFooter from '../components/landing/LandingFooter';
+import { IconLock, IconEye, IconEyeOff, IconLoader, IconArrowRight } from '../components/landing/Icons';
 
 function getPasswordStrength(password) {
   if (!password) return { level: 0, label: '', color: '' };
@@ -32,21 +35,6 @@ export default function ResetPasswordPage() {
 
   const strength = useMemo(() => getPasswordStrength(newPassword), [newPassword]);
 
-  const EyeOpen = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" width="20" height="20">
-      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-      <circle cx="12" cy="12" r="3"/>
-    </svg>
-  );
-
-  const EyeClosed = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" width="20" height="20">
-      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
-      <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
-      <line x1="1" y1="1" x2="23" y2="23"/>
-    </svg>
-  );
-
   async function handleSubmit(e) {
     e.preventDefault();
     setError('');
@@ -74,155 +62,174 @@ export default function ResetPasswordPage() {
     }
   }
 
-  // No token in URL — show error state
+  // No token in URL
   if (!token) {
     return (
-      <div className="auth-wrapper">
-        <div className="auth-container">
-          <div className="header">
-            <span className="header__ornament">✦ ☽ ✦</span>
-            <h1 className="header__title">Invalid Link</h1>
-            <p className="header__subtitle">This reset link is missing or malformed</p>
-          </div>
-          <div className="card auth-card" style={{ textAlign: 'center' }}>
-            <div className="auth-error">
-              No reset token found. Please request a new password reset link.
-            </div>
-            <Link to="/forgot-password" className="generate-btn auth-btn" style={{ display: 'block', textDecoration: 'none', textAlign: 'center' }}>
-              ✦ Request New Link ✦
-            </Link>
-            <div className="auth-switch" style={{ marginTop: '1.25rem' }}>
-              <Link to="/login" className="auth-link">Back to Sign In</Link>
+      <div className="ln-page">
+        <LandingNavbar activePage="login" />
+        <div className="ln-auth-page">
+          <div className="ln-auth">
+            <div className="ln-auth__card">
+              <div className="ln-auth__header">
+                <h2 className="ln-auth__title">Invalid Link</h2>
+                <p className="ln-auth__subtitle">This reset link is missing or malformed</p>
+              </div>
+              <div className="ln-auth__error" role="alert">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="8" x2="12" y2="12" />
+                  <line x1="12" y1="16" x2="12.01" y2="16" />
+                </svg>
+                No reset token found. Please request a new password reset link.
+              </div>
+              <Link to="/forgot-password" className="ln-auth__submit" style={{ display: 'block', textDecoration: 'none', textAlign: 'center' }}>
+                Request New Link
+              </Link>
+              <div className="ln-auth__switch">
+                <Link to="/login" className="ln-auth__switch-link">Back to Sign In</Link>
+              </div>
             </div>
           </div>
         </div>
+        <LandingFooter />
       </div>
     );
   }
 
   return (
-    <div className="auth-wrapper">
-      <div className="auth-container">
-        <div className="header">
-          <span className="header__ornament">✦ ☽ ✦</span>
-          <div className="header__bismillah">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</div>
-          <h1 className="header__title">Create New Password</h1>
-          <p className="header__subtitle">Enter your new password below</p>
-        </div>
+    <div className="ln-page">
+      <LandingNavbar activePage="login" />
 
-        <div className="card auth-card">
-          {success ? (
-            <div className="auth-success-state">
-              <div className="auth-success-icon">
-                <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
-                  <circle className="auth-success-circle" cx="32" cy="32" r="28" stroke="currentColor" strokeWidth="2" />
-                  <path className="auth-success-tick" d="M20 33L28 41L44 25" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
+      <div className="ln-auth-page">
+        <div className="ln-auth">
+          <div className="ln-auth__card">
+            {success ? (
+              <div className="ln-auth__success">
+                <div className="ln-auth__success-icon">
+                  <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+                    <circle className="ln-auth__success-circle" cx="32" cy="32" r="28" stroke="currentColor" strokeWidth="2" />
+                    <path className="ln-auth__success-tick" d="M20 33L28 41L44 25" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </div>
+                <h2 className="ln-auth__title">Password Reset</h2>
+                <p className="ln-auth__subtitle">
+                  Your password has been updated successfully. Redirecting to sign in...
+                </p>
+                <div className="ln-auth__redirect-dots">
+                  <span /><span /><span />
+                </div>
               </div>
-              <h2 className="auth-success-title">Password Reset!</h2>
-              <p className="auth-success-text">
-                Your password has been updated successfully.
-                Redirecting to sign in…
-              </p>
-              <div className="auth-redirect-dots">
-                <span></span><span></span><span></span>
-              </div>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit}>
-              <div className="field">
-                <label className="field__label">New Password</label>
-                <div className="password-field">
-                  <input
-                    id="reset-new-password"
-                    type={showPassword ? 'text' : 'password'}
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="At least 6 characters"
-                    required
-                    minLength={6}
-                    autoFocus
-                  />
-                  <button
-                    type="button"
-                    className="password-field__toggle"
-                    onClick={() => setShowPassword(!showPassword)}
-                    title={showPassword ? 'Hide password' : 'Show password'}
-                    aria-label={showPassword ? 'Hide password' : 'Show password'}
-                  >
-                    {showPassword ? <EyeClosed /> : <EyeOpen />}
-                  </button>
+            ) : (
+              <>
+                <div className="ln-auth__header">
+                  <h2 className="ln-auth__title">Create New Password</h2>
+                  <p className="ln-auth__subtitle">Enter your new password below</p>
                 </div>
 
-                {/* Password Strength Meter */}
-                {newPassword && (
-                  <div className="password-strength">
-                    <div className="password-strength__track">
-                      <div
-                        className="password-strength__bar"
-                        style={{
-                          width: `${(strength.level / 4) * 100}%`,
-                          backgroundColor: strength.color,
-                        }}
+                <form onSubmit={handleSubmit}>
+                  <div className="ln-auth__field">
+                    <label className="ln-auth__label" htmlFor="reset-new-password">New Password</label>
+                    <div className="ln-auth__input-wrap">
+                      <span className="ln-auth__input-icon"><IconLock size={18} /></span>
+                      <input
+                        id="reset-new-password"
+                        type={showPassword ? 'text' : 'password'}
+                        className="ln-auth__input ln-auth__input--password"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder="At least 6 characters"
+                        required
+                        minLength={6}
+                        autoFocus
                       />
+                      <button
+                        type="button"
+                        className="ln-auth__toggle"
+                        onClick={() => setShowPassword(!showPassword)}
+                        aria-label={showPassword ? 'Hide password' : 'Show password'}
+                      >
+                        {showPassword ? <IconEyeOff size={18} /> : <IconEye size={18} />}
+                      </button>
                     </div>
-                    <span
-                      className="password-strength__label"
-                      style={{ color: strength.color }}
-                    >
-                      {strength.label}
-                    </span>
+
+                    {/* Password Strength */}
+                    {newPassword && (
+                      <div className="ln-auth__strength">
+                        <div className="ln-auth__strength-track">
+                          <div
+                            className="ln-auth__strength-bar"
+                            style={{
+                              width: `${(strength.level / 4) * 100}%`,
+                              backgroundColor: strength.color,
+                            }}
+                          />
+                        </div>
+                        <span className="ln-auth__strength-label" style={{ color: strength.color }}>
+                          {strength.label}
+                        </span>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
 
-              <div className="field">
-                <label className="field__label">Confirm Password</label>
-                <div className="password-field">
-                  <input
-                    id="reset-confirm-password"
-                    type={showConfirmPassword ? 'text' : 'password'}
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="Repeat your new password"
-                    required
-                  />
+                  <div className="ln-auth__field">
+                    <label className="ln-auth__label" htmlFor="reset-confirm-password">Confirm Password</label>
+                    <div className="ln-auth__input-wrap">
+                      <span className="ln-auth__input-icon"><IconLock size={18} /></span>
+                      <input
+                        id="reset-confirm-password"
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        className="ln-auth__input ln-auth__input--password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder="Repeat your new password"
+                        required
+                      />
+                      <button
+                        type="button"
+                        className="ln-auth__toggle"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                      >
+                        {showConfirmPassword ? <IconEyeOff size={18} /> : <IconEye size={18} />}
+                      </button>
+                    </div>
+                  </div>
+
+                  {error && (
+                    <div className="ln-auth__error" role="alert">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="12" r="10" />
+                        <line x1="12" y1="8" x2="12" y2="12" />
+                        <line x1="12" y1="16" x2="12.01" y2="16" />
+                      </svg>
+                      {error}
+                    </div>
+                  )}
+
                   <button
-                    type="button"
-                    className="password-field__toggle"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    title={showConfirmPassword ? 'Hide password' : 'Show password'}
-                    aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                    id="reset-submit"
+                    type="submit"
+                    className="ln-auth__submit"
+                    disabled={isLoading}
                   >
-                    {showConfirmPassword ? <EyeClosed /> : <EyeOpen />}
+                    {isLoading ? (
+                      <><span className="ln-auth__spinner"><IconLoader size={18} /></span>Resetting...</>
+                    ) : (
+                      <>Reset Password <IconArrowRight size={16} /></>
+                    )}
                   </button>
+                </form>
+
+                <div className="ln-auth__switch">
+                  <Link to="/login" className="ln-auth__switch-link">Back to Sign In</Link>
                 </div>
-              </div>
-
-              {error && <div className="auth-error">{error}</div>}
-
-              <button
-                id="reset-submit"
-                type="submit"
-                className="generate-btn auth-btn"
-                disabled={isLoading}
-              >
-                {isLoading ? '⟳ Resetting…' : '✦ Reset Password ✦'}
-              </button>
-            </form>
-          )}
-
-          {!success && (
-            <div className="auth-switch">
-              <Link to="/login" className="auth-link">Back to Sign In</Link>
-            </div>
-          )}
-        </div>
-
-        <div className="footer">
-          آمين — May Allah make your content a sadaqah jaariyah
+              </>
+            )}
+          </div>
         </div>
       </div>
+
+      <LandingFooter />
     </div>
   );
 }
