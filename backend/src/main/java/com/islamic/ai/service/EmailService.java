@@ -22,6 +22,9 @@ public class EmailService {
     @Value("${app.report.recipient:muslimforever833@gmail.com}")
     private String recipientEmail;
 
+    @Value("${spring.mail.username:}")
+    private String fromEmail;
+
     private static final int MAX_RETRIES = 3;
     private static final long RETRY_DELAY_MS = 2000;
     private static final DateTimeFormatter TIME_FMT =
@@ -38,6 +41,7 @@ public class EmailService {
                 MimeMessage message = mailSender.createMimeMessage();
                 MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
+                helper.setFrom(fromEmail);
                 helper.setTo(recipientEmail);
                 helper.setSubject("[User Report] " + report.getSubject());
 
@@ -96,6 +100,7 @@ public class EmailService {
                 MimeMessage message = mailSender.createMimeMessage();
                 MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
+                helper.setFrom(fromEmail);
                 helper.setTo(email);
                 helper.setSubject("Reset Your Password — Islamic Script Generator");
 
@@ -199,6 +204,7 @@ public class EmailService {
                 MimeMessage message = mailSender.createMimeMessage();
                 MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
+                helper.setFrom(fromEmail);
                 helper.setTo(email);
                 helper.setSubject("Subscription Cancellation Confirmed — Islamic Script Generator");
 
