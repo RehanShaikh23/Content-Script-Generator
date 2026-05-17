@@ -533,6 +533,7 @@ textarea{resize:vertical;min-height:68px}
 .creator-tip__tools{grid-template-columns:1fr}
 .creator-tips__promise{font-size:0.65rem;padding:0.35rem 0.7rem;flex-wrap:wrap;justify-content:center;text-align:center}
 .user-bar{flex-wrap:wrap;gap:0.5rem}
+.user-bar__right{display:none}
 }
 
 /* ═══════════════════════════════════════════════
