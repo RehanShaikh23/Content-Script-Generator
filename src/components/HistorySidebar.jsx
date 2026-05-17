@@ -85,9 +85,8 @@ export default function HistorySidebar({ isOpen, onClose, onSelectScript, credit
           <button className="sidebar__close" onClick={onClose}>✕</button>
         </div>
 
-        {/* ── Navigation Section ── */}
+        {/* ── Plan Badge (top) ── */}
         <div className="sidebar__nav">
-          {/* Plan Badge */}
           {isPremium && !isCancellationScheduled ? (
             <div className="sidebar__nav-badge sidebar__nav-badge--premium">
               ⚡ Premium Active
@@ -103,30 +102,9 @@ export default function HistorySidebar({ isOpen, onClose, onSelectScript, credit
               </div>
             )
           )}
-
-          {/* Manage Plan / Upgrade */}
-          {hasPaidPlan ? (
-            <button className="sidebar__nav-btn" onClick={() => { onClose(); onUpgrade(); }}>
-              <span className="sidebar__nav-icon">☰</span>
-              <span className="sidebar__nav-label">Manage Plan</span>
-              <span className="sidebar__nav-arrow">→</span>
-            </button>
-          ) : (
-            <button className="sidebar__nav-btn sidebar__nav-btn--upgrade" onClick={() => { onClose(); onUpgrade(); }}>
-              <span className="sidebar__nav-icon">✦</span>
-              <span className="sidebar__nav-label">Upgrade Plan</span>
-              <span className="sidebar__nav-arrow">→</span>
-            </button>
-          )}
-
-          {/* Calendar Planner Nav */}
-          <button className={`sidebar__nav-btn ${showCalendar ? 'sidebar__nav-btn--active' : ''}`} onClick={onCalendar}>
-            <span className="sidebar__nav-icon">📅</span>
-            <span className="sidebar__nav-label">Content Calendar</span>
-            <span className="sidebar__nav-arrow">→</span>
-          </button>
         </div>
 
+        {/* ── Scrollable History Content ── */}
         <div className="sidebar__content">
           {loading ? (
             <div className="sidebar__empty">Loading…</div>
@@ -138,7 +116,6 @@ export default function HistorySidebar({ isOpen, onClose, onSelectScript, credit
             </div>
           ) : (
             <>
-              {/* History limit indicator for free users */}
               {!isPremium && historyLimit > 0 && total > historyLimit && (
                 <div className="sidebar__limit-notice">
                   Showing {historyLimit} of {total} scripts.
@@ -187,6 +164,41 @@ export default function HistorySidebar({ isOpen, onClose, onSelectScript, credit
               </div>
             </>
           )}
+        </div>
+
+        {/* ── Bottom Footer: Upgrade, Calendar, Credits, Sign Out ── */}
+        <div className="sidebar__bottom">
+          {/* Upgrade / Manage Plan */}
+          {hasPaidPlan ? (
+            <button className="sidebar__nav-btn" onClick={() => { onClose(); onUpgrade(); }}>
+              <span className="sidebar__nav-icon">☰</span>
+              <span className="sidebar__nav-label">Manage Plan</span>
+              <span className="sidebar__nav-arrow">→</span>
+            </button>
+          ) : (
+            <button className="sidebar__nav-btn sidebar__nav-btn--upgrade" onClick={() => { onClose(); onUpgrade(); }}>
+              <span className="sidebar__nav-icon">✦</span>
+              <span className="sidebar__nav-label">Upgrade Plan</span>
+              <span className="sidebar__nav-arrow">→</span>
+            </button>
+          )}
+
+          {/* Content Calendar */}
+          <button className={`sidebar__nav-btn ${showCalendar ? 'sidebar__nav-btn--active' : ''}`} onClick={onCalendar}>
+            <span className="sidebar__nav-icon">📅</span>
+            <span className="sidebar__nav-label">Content Calendar</span>
+            <span className="sidebar__nav-arrow">→</span>
+          </button>
+
+          {/* Credits & Sign Out row */}
+          <div className="sidebar__bottom-row">
+            <span className="sidebar__bottom-credits" title={isPremium ? 'Unlimited credits' : 'Credits remaining'}>
+              ✦ {isPremium ? '∞' : credits} {!isPremium && credits !== 1 ? 'credits' : isPremium ? '' : 'credit'}
+            </span>
+            <button className="sidebar__bottom-signout" onClick={onLogout}>
+              Sign Out
+            </button>
+          </div>
         </div>
       </aside>
     </>

@@ -145,6 +145,13 @@ textarea{resize:vertical;min-height:68px}
 
 /* Sidebar Navigation Section */
 .sidebar__nav{display:flex;flex-direction:column;gap:0.4rem;padding:0.8rem 0.8rem 0.5rem;border-bottom:1px solid rgba(255,255,255,0.08)}
+
+/* Sidebar Bottom Footer */
+.sidebar__bottom{display:flex;flex-direction:column;gap:0.4rem;padding:0.6rem 0.8rem 0.8rem;border-top:1px solid rgba(255,255,255,0.08);flex-shrink:0}
+.sidebar__bottom-row{display:flex;align-items:center;justify-content:space-between;padding:0.5rem 0.2rem 0.1rem;margin-top:0.15rem;border-top:1px solid rgba(255,255,255,0.06)}
+.sidebar__bottom-credits{font-size:0.75rem;font-weight:600;font-family:var(--font);color:rgba(255,255,255,0.7);letter-spacing:0.01em}
+.sidebar__bottom-signout{background:none;border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.6);padding:0.3rem 0.9rem;border-radius:var(--radius-pill);font-size:0.72rem;font-weight:500;cursor:pointer;font-family:var(--font);transition:all var(--transition)}
+.sidebar__bottom-signout:hover{border-color:rgba(255,255,255,0.35);color:#fff;background:rgba(255,255,255,0.08)}
 .sidebar__nav-badge{font-size:0.72rem;font-weight:600;font-family:var(--font);padding:0.35rem 0.8rem;border-radius:var(--radius-sm);text-align:center;letter-spacing:0.02em;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.7)}
 .sidebar__nav-badge--premium{background:rgba(255,255,255,0.12);border-color:rgba(255,255,255,0.2);color:#fff}
 .sidebar__nav-badge--cancelling{background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.25);color:#fbbf24}
