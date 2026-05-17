@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -36,8 +37,20 @@ public class EmailService {
         if (fromEmail == null || fromEmail.isBlank()) {
             log.error("⚠️ MAIL_USERNAME is not configured! Password reset and report emails WILL FAIL. "
                     + "Set MAIL_USERNAME env var to your Gmail address.");
-        } else {
-            log.info("✅ Email service configured with sender: {}", fromEmail);
+            return;
+        }
+
+        log.info("✅ Email service configured with sender: {}", fromEmail);
+
+        // Test actual SMTP connection at startup
+        try {
+            if (mailSender instanceof JavaMailSenderImpl impl) {
+                log.info("🔌 Testing SMTP connection to {}:{} ...", impl.getHost(), impl.getPort());
+                impl.testConnection();
+                log.info("✅ SMTP connection test PASSED — emails will work");
+            }
+        } catch (Exception e) {
+            log.error("❌ SMTP connection test FAILED — emails will NOT send. Error: {}", e.getMessage(), e);
         }
     }
 
