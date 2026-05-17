@@ -9,6 +9,7 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import jakarta.annotation.PostConstruct;
 import jakarta.mail.internet.MimeMessage;
 import java.time.format.DateTimeFormatter;
 
@@ -29,6 +30,16 @@ public class EmailService {
     private static final long RETRY_DELAY_MS = 2000;
     private static final DateTimeFormatter TIME_FMT =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss XXX");
+
+    @PostConstruct
+    public void validateMailConfig() {
+        if (fromEmail == null || fromEmail.isBlank()) {
+            log.error("⚠️ MAIL_USERNAME is not configured! Password reset and report emails WILL FAIL. "
+                    + "Set MAIL_USERNAME env var to your Gmail address.");
+        } else {
+            log.info("✅ Email service configured with sender: {}", fromEmail);
+        }
+    }
 
     /**
      * Send a report notification email asynchronously.
