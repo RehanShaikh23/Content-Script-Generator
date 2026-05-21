@@ -1,5 +1,8 @@
 package com.islamic.ai.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.islamic.ai.model.Report;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,6 +15,11 @@ import org.springframework.stereotype.Service;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.mail.internet.MimeMessage;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.time.format.DateTimeFormatter;
 
 @Service
@@ -20,6 +28,7 @@ import java.time.format.DateTimeFormatter;
 public class EmailService {
 
     private final JavaMailSender mailSender;
+    private final ObjectMapper objectMapper;
 
     @Value("${app.report.recipient:muslimforever833@gmail.com}")
     private String recipientEmail;
@@ -27,77 +36,184 @@ public class EmailService {
     @Value("${spring.mail.username:}")
     private String fromEmail;
 
+    @Value("${app.email.resend-api-key:}")
+    private String resendApiKey;
+
+    @Value("${app.email.from:Islamic Script Generator <onboarding@resend.dev>}")
+    private String resendFromAddress;
+
     private static final int MAX_RETRIES = 3;
     private static final long RETRY_DELAY_MS = 2000;
+    private static final String RESEND_API_URL = "https://api.resend.com/emails";
     private static final DateTimeFormatter TIME_FMT =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss XXX");
 
+    private boolean useResend = false;
+    private HttpClient httpClient;
+
+    // ── Startup Validation ──────────────────────────────────────────
+
     @PostConstruct
     public void validateMailConfig() {
-        if (fromEmail == null || fromEmail.isBlank()) {
-            log.error("⚠️ MAIL_USERNAME is not configured! Password reset and report emails WILL FAIL. "
-                    + "Set MAIL_USERNAME env var to your Gmail address.");
+        // Prefer Resend (HTTP) over SMTP — works on cloud platforms that block port 587
+        if (resendApiKey != null && !resendApiKey.isBlank()) {
+            useResend = true;
+            httpClient = HttpClient.newBuilder()
+                    .connectTimeout(Duration.ofSeconds(10))
+                    .build();
+            log.info("✅ Email service configured with Resend (HTTP API), from: {}", resendFromAddress);
             return;
         }
 
-        log.info("✅ Email service configured with sender: {}", fromEmail);
-
-        // Test actual SMTP connection at startup
-        try {
-            if (mailSender instanceof JavaMailSenderImpl impl) {
-                log.info("🔌 Testing SMTP connection to {}:{} ...", impl.getHost(), impl.getPort());
-                impl.testConnection();
-                log.info("✅ SMTP connection test PASSED — emails will work");
+        // Fallback to SMTP (local development)
+        if (fromEmail != null && !fromEmail.isBlank()) {
+            log.info("✅ Email service configured with SMTP, sender: {}", fromEmail);
+            try {
+                if (mailSender instanceof JavaMailSenderImpl impl) {
+                    log.info("🔌 Testing SMTP connection to {}:{} ...", impl.getHost(), impl.getPort());
+                    impl.testConnection();
+                    log.info("✅ SMTP connection test PASSED");
+                }
+            } catch (Exception e) {
+                log.error("❌ SMTP connection test FAILED: {}", e.getMessage());
             }
-        } catch (Exception e) {
-            log.error("❌ SMTP connection test FAILED — emails will NOT send. Error: {}", e.getMessage(), e);
+            return;
         }
+
+        log.error("⚠️ No email service configured! Set RESEND_API_KEY (recommended) or MAIL_USERNAME.");
     }
+
+    // ── Public Async Methods ────────────────────────────────────────
 
     /**
      * Send a report notification email asynchronously.
-     * Retries up to 3 times with a 2-second delay between attempts.
      */
     @Async
     public void sendReportEmail(Report report) {
+        String subject = "[User Report] " + report.getSubject();
+        String textBody = buildReportBody(report);
+
+        doSend(recipientEmail, subject, null, textBody, "report id=" + report.getId());
+    }
+
+    /**
+     * Send a password reset email asynchronously.
+     */
+    @Async
+    public void sendPasswordResetEmail(String email, String resetLink) {
+        String subject = "Reset Your Password — Islamic Script Generator";
+        String htmlBody = buildResetEmailBody(resetLink);
+
+        doSend(email, subject, htmlBody, null, "password reset");
+    }
+
+    /**
+     * Send a subscription cancellation confirmation email asynchronously.
+     */
+    @Async
+    public void sendCancellationEmail(String email, String fullName, String planName, String accessEndDate) {
+        String subject = "Subscription Cancellation Confirmed — Islamic Script Generator";
+        String htmlBody = buildCancellationEmailBody(fullName, planName, accessEndDate);
+
+        doSend(email, subject, htmlBody, null, "cancellation");
+    }
+
+    // ── Core Send Logic (retry + routing) ───────────────────────────
+
+    /**
+     * Central send method with retry logic. Routes to Resend HTTP API
+     * or SMTP based on configuration.
+     */
+    private void doSend(String to, String subject, String htmlBody, String textBody, String context) {
         for (int attempt = 1; attempt <= MAX_RETRIES; attempt++) {
             try {
-                MimeMessage message = mailSender.createMimeMessage();
-                MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-
-                helper.setFrom(fromEmail);
-                helper.setTo(recipientEmail);
-                helper.setSubject("[User Report] " + report.getSubject());
-
-                String body = buildEmailBody(report);
-                helper.setText(body, false);
-
-                mailSender.send(message);
-                log.info("Report email sent successfully for report id={}", report.getId());
-                return; // success — exit retry loop
+                if (useResend) {
+                    sendViaResend(to, subject, htmlBody, textBody);
+                } else {
+                    sendViaSmtp(to, subject, htmlBody, textBody);
+                }
+                log.info("✅ Email sent successfully to {} ({})", to, context);
+                return;
 
             } catch (Exception e) {
-                log.warn("Failed to send report email (attempt {}/{}): {}",
-                        attempt, MAX_RETRIES, e.getMessage());
+                log.warn("Failed to send email (attempt {}/{}) for {}: {}",
+                        attempt, MAX_RETRIES, context, e.getMessage());
 
                 if (attempt < MAX_RETRIES) {
                     try {
                         Thread.sleep(RETRY_DELAY_MS);
                     } catch (InterruptedException ie) {
                         Thread.currentThread().interrupt();
-                        log.error("Email retry interrupted for report id={}", report.getId());
+                        log.error("Email retry interrupted for {}", context);
                         return;
                     }
                 } else {
-                    log.error("All {} email attempts failed for report id={}. "
-                            + "Report is saved in DB and can be reviewed manually.",
-                            MAX_RETRIES, report.getId());
+                    log.error("❌ All {} email attempts failed for {} to {}",
+                            MAX_RETRIES, context, to);
                 }
             }
         }
     }
 
-    private String buildEmailBody(Report report) {
+    // ── Resend HTTP API ─────────────────────────────────────────────
+
+    private void sendViaResend(String to, String subject, String htmlBody, String textBody) throws Exception {
+        ObjectNode payload = objectMapper.createObjectNode();
+        payload.put("from", resendFromAddress);
+
+        ArrayNode toArray = payload.putArray("to");
+        toArray.add(to);
+
+        payload.put("subject", subject);
+
+        if (htmlBody != null) {
+            payload.put("html", htmlBody);
+        }
+        if (textBody != null) {
+            payload.put("text", textBody);
+        }
+
+        String json = objectMapper.writeValueAsString(payload);
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(RESEND_API_URL))
+                .header("Authorization", "Bearer " + resendApiKey)
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(json))
+                .timeout(Duration.ofSeconds(15))
+                .build();
+
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+        if (response.statusCode() >= 400) {
+            throw new RuntimeException("Resend API error (" + response.statusCode() + "): " + response.body());
+        }
+
+        log.debug("Resend API response: {}", response.body());
+    }
+
+    // ── SMTP Fallback (local development) ───────────────────────────
+
+    private void sendViaSmtp(String to, String subject, String htmlBody, String textBody) throws Exception {
+        MimeMessage message = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+        helper.setFrom(fromEmail);
+        helper.setTo(to);
+        helper.setSubject(subject);
+
+        if (htmlBody != null) {
+            helper.setText(htmlBody, true);
+        } else if (textBody != null) {
+            helper.setText(textBody, false);
+        }
+
+        mailSender.send(message);
+    }
+
+    // ── Email Body Builders ─────────────────────────────────────────
+
+    private String buildReportBody(Report report) {
         StringBuilder sb = new StringBuilder();
         sb.append("User: ").append(report.getEmail() != null ? report.getEmail() : "Unknown").append("\n");
         sb.append("Type: ").append(report.getSubject()).append("\n");
@@ -111,48 +227,6 @@ public class EmailService {
         }
 
         return sb.toString();
-    }
-
-    /**
-     * Send a password reset email asynchronously.
-     * Retries up to 3 times with a 2-second delay between attempts.
-     */
-    @Async
-    public void sendPasswordResetEmail(String email, String resetLink) {
-        for (int attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-            try {
-                MimeMessage message = mailSender.createMimeMessage();
-                MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-
-                helper.setFrom(fromEmail);
-                helper.setTo(email);
-                helper.setSubject("Reset Your Password — Islamic Script Generator");
-
-                String body = buildResetEmailBody(resetLink);
-                helper.setText(body, true); // true = HTML
-
-                mailSender.send(message);
-                log.info("Password reset email sent successfully to {}", email);
-                return;
-
-            } catch (Exception e) {
-                log.warn("Failed to send password reset email (attempt {}/{}): {}",
-                        attempt, MAX_RETRIES, e.getMessage());
-
-                if (attempt < MAX_RETRIES) {
-                    try {
-                        Thread.sleep(RETRY_DELAY_MS);
-                    } catch (InterruptedException ie) {
-                        Thread.currentThread().interrupt();
-                        log.error("Password reset email retry interrupted for {}", email);
-                        return;
-                    }
-                } else {
-                    log.error("All {} email attempts failed for password reset to {}",
-                            MAX_RETRIES, email);
-                }
-            }
-        }
     }
 
     private String buildResetEmailBody(String resetLink) {
@@ -216,47 +290,6 @@ public class EmailService {
                 </body>
                 </html>
                 """.formatted(resetLink, resetLink, resetLink);
-    }
-    /**
-     * Send a subscription cancellation confirmation email asynchronously.
-     * Retries up to 3 times with a 2-second delay between attempts.
-     */
-    @Async
-    public void sendCancellationEmail(String email, String fullName, String planName, String accessEndDate) {
-        for (int attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-            try {
-                MimeMessage message = mailSender.createMimeMessage();
-                MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-
-                helper.setFrom(fromEmail);
-                helper.setTo(email);
-                helper.setSubject("Subscription Cancellation Confirmed — Islamic Script Generator");
-
-                String body = buildCancellationEmailBody(fullName, planName, accessEndDate);
-                helper.setText(body, true); // true = HTML
-
-                mailSender.send(message);
-                log.info("Cancellation email sent successfully to {}", email);
-                return;
-
-            } catch (Exception e) {
-                log.warn("Failed to send cancellation email (attempt {}/{}): {}",
-                        attempt, MAX_RETRIES, e.getMessage());
-
-                if (attempt < MAX_RETRIES) {
-                    try {
-                        Thread.sleep(RETRY_DELAY_MS);
-                    } catch (InterruptedException ie) {
-                        Thread.currentThread().interrupt();
-                        log.error("Cancellation email retry interrupted for {}", email);
-                        return;
-                    }
-                } else {
-                    log.error("All {} email attempts failed for cancellation email to {}",
-                            MAX_RETRIES, email);
-                }
-            }
-        }
     }
 
     private String buildCancellationEmailBody(String fullName, String planName, String accessEndDate) {
