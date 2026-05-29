@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { IconArrowRight, IconBookOpen, IconCpu, IconLanguages, IconUsers } from './Icons';
+import RotatingText from '../RotatingText/RotatingText';
 
 export default function HeroSection() {
   return (
@@ -19,7 +20,19 @@ export default function HeroSection() {
 
         {/* Headline */}
         <h1 className="ln-hero__title" id="hero-title">
-          Generate Viral Islamic<br />Content in Seconds
+          Generate Viral Islamic<br />
+          <RotatingText
+            texts={['Content in Seconds', 'Scripts Instantly', 'Reels with AI', 'Videos Effortlessly']}
+            mainClassName="ln-hero__rotating"
+            staggerFrom="last"
+            initial={{ y: "100%" }}
+            animate={{ y: 0 }}
+            exit={{ y: "-120%" }}
+            staggerDuration={0.025}
+            splitLevelClassName="overflow-hidden"
+            transition={{ type: "spring", damping: 30, stiffness: 400 }}
+            rotationInterval={2000}
+          />
         </h1>
 
         {/* Subheading */}
