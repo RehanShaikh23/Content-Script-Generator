@@ -554,6 +554,12 @@ export default function ScriptForm({ selectedScript, onScriptGenerated }) {
 
 function formatScript(text) {
   return text
+    // ── Strip unwanted markdown / formatting artifacts ──
+    .replace(/^#{1,6}\s*/gm, '')       // ## headings → plain text
+    .replace(/^---+$/gm, '')           // --- horizontal rules
+    .replace(/^___+$/gm, '')           // ___ horizontal rules
+    .replace(/--+/g, ' ')              // -- double dashes → space
+    .replace(/—/g, ' ')               // em dash → space
     // Escape HTML
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
