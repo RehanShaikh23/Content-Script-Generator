@@ -40,6 +40,7 @@ C:\MyProjects\Islamic Content Ai\backend\src\main\java\com\islamic\ai\security\R
 C:\MyProjects\Islamic Content Ai\backend\src\main\java\com\islamic\ai\security\SecurityAuditLogger.java
 C:\MyProjects\Islamic Content Ai\backend\src\main\java\com\islamic\ai\security\SecurityConfig.java
 C:\MyProjects\Islamic Content Ai\backend\src\main\java\com\islamic\ai\security\WebConfig.java
+C:\MyProjects\Islamic Content Ai\backend\src\main\java\com\islamic\ai\service\AiModelConfig.java
 C:\MyProjects\Islamic Content Ai\backend\src\main\java\com\islamic\ai\service\AuthService.java
 C:\MyProjects\Islamic Content Ai\backend\src\main\java\com\islamic\ai\service\CalendarGenerationService.java
 C:\MyProjects\Islamic Content Ai\backend\src\main\java\com\islamic\ai\service\DodoPaymentsService.java
