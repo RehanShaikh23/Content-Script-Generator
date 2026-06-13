@@ -9,6 +9,7 @@ import {
   CATEGORIES,
   TONES,
   LANGUAGES,
+  LLM_MODELS,
 } from '../constants';
 
 export default function ScriptForm({ selectedScript, onScriptGenerated }) {
@@ -19,6 +20,7 @@ export default function ScriptForm({ selectedScript, onScriptGenerated }) {
   const [tone, setTone] = useState('educational');
   const [customTone, setCustomTone] = useState('');
   const [language, setLanguage] = useState('english');
+  const [selectedModel, setSelectedModel] = useState('default');
   const [script, setScript] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
@@ -71,6 +73,7 @@ export default function ScriptForm({ selectedScript, onScriptGenerated }) {
   const availableFormats = VIDEO_FORMATS.filter(f => !f.premium || isPremium);
   const availableTones = TONES.filter(t => !t.premium || isPremium);
   const availableLanguages = LANGUAGES.filter(l => !l.premium || isPremium);
+  const availableModels = LLM_MODELS.filter(m => !m.premium || isPremium);
 
   // Memoize formatted script to avoid re-computing on every render
   const formattedScript = useMemo(() => {
@@ -130,6 +133,7 @@ export default function ScriptForm({ selectedScript, onScriptGenerated }) {
       videoFormat,
       category,
       tone: tone === 'custom' ? 'custom' : tone,
+      model: selectedModel,
     };
 
     if (tone === 'custom' && customTone.trim()) {
@@ -183,7 +187,7 @@ export default function ScriptForm({ selectedScript, onScriptGenerated }) {
     });
 
     streamControllerRef.current = controller;
-  }, [canGenerate, isPremium, credits, topic, extra, videoFormat, category, tone, customTone, language, token, abortStream, updateCredits]);
+  }, [canGenerate, isPremium, credits, topic, extra, videoFormat, category, tone, customTone, language, selectedModel, token, abortStream, updateCredits]);
 
   // Stop generation mid-stream
   const handleStopGeneration = useCallback(() => {
@@ -392,6 +396,37 @@ export default function ScriptForm({ selectedScript, onScriptGenerated }) {
             🌍 Multi-language scripts available with Premium
           </div>
         )}
+
+        {/* LLM Model Selector */}
+        <div className="field">
+          <label className="field__label">
+            🤖 AI Model
+            <span className="field__label-hint">
+              {isPremium ? ' — choose your preferred AI' : ' — upgrade for premium models'}
+            </span>
+          </label>
+          <div className="llm-model-selector">
+            {availableModels.map((m) => (
+              <button
+                key={m.value}
+                type="button"
+                className={`llm-model-chip${selectedModel === m.value ? ' active' : ''}`}
+                onClick={() => setSelectedModel(m.value)}
+              >
+                <span className="llm-model-chip__icon">{m.icon}</span>
+                <span className="llm-model-chip__info">
+                  <span className="llm-model-chip__label">{m.label}</span>
+                  {m.sublabel && <span className="llm-model-chip__sublabel">{m.sublabel}</span>}
+                </span>
+              </button>
+            ))}
+          </div>
+          {!isPremium && (
+            <div className="premium-locked-hint">
+              🔒 GPT-4o, Claude, Gemini & more with Premium
+            </div>
+          )}
+        </div>
 
         {/* Upgrade Prompt — only shown for free users */}
         {!isPremium && showUpgrade && (

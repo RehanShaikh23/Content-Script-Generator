@@ -66,6 +66,7 @@ public class ScriptCacheService {
                 normalize(request.getTone()),
                 normalize(request.getCustomTone()),
                 normalize(request.getLanguage()),
+                normalize(request.getModel()),
                 String.valueOf(isPremium)
         );
 

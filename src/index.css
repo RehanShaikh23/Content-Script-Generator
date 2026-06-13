@@ -333,6 +333,20 @@ textarea{resize:vertical;min-height:68px}
 .custom-tone-input::placeholder{color:var(--border);font-style:italic}
 .premium-locked-hint{font-size:0.68rem;color:var(--border);margin-top:0.4rem;text-align:center}
 
+/* LLM Model Selector */
+.llm-model-selector{display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem}
+.llm-model-chip{display:flex;align-items:center;gap:0.5rem;padding:0.6rem 0.7rem;border-radius:var(--radius-sm);cursor:pointer;border:1px solid var(--silver);background:var(--surface);color:var(--text-sec);font-family:var(--font);font-size:0.75rem;transition:all var(--transition);text-align:left;width:100%}
+.llm-model-chip:hover{border-color:var(--text-sec);background:var(--bg)}
+.llm-model-chip.active{border:1.5px solid var(--text-pri);background:var(--text-pri);color:#fff}
+.llm-model-chip__icon{font-size:1.15rem;flex-shrink:0;width:28px;height:28px;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.04);border-radius:6px;transition:background var(--transition)}
+.llm-model-chip.active .llm-model-chip__icon{background:rgba(255,255,255,0.15)}
+.llm-model-chip__info{display:flex;flex-direction:column;gap:0.05rem;min-width:0}
+.llm-model-chip__label{font-weight:600;font-size:0.76rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.llm-model-chip__sublabel{font-size:0.62rem;opacity:0.6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.llm-model-chip.active .llm-model-chip__sublabel{opacity:0.8}
+@media(max-width:640px){.llm-model-selector{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:400px){.llm-model-selector{grid-template-columns:1fr}}
+
 /* Sidebar Premium */
 .sidebar__premium-tag{display:inline-block;margin-left:0.4rem;background:rgba(255,255,255,0.15);color:#fff;font-size:0.65rem;padding:0.1rem 0.4rem;border-radius:var(--radius-pill);font-weight:600}
 .sidebar__limit-notice{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:var(--radius-sm);padding:0.5rem 0.7rem;font-size:0.72rem;color:rgba(255,255,255,0.5);text-align:center;margin-bottom:0.6rem;line-height:1.5}

@@ -18,9 +18,7 @@ public class ScriptGenerationService {
 
     private static final Logger log = LoggerFactory.getLogger(ScriptGenerationService.class);
 
-    private final String apiKey;
-    private final String baseUrl;
-    private final String model;
+    private final AiModelConfig aiModelConfig;
     private final int standardMaxTokens;
     private final int premiumMaxTokens;
     private final RestTemplate restTemplate;
@@ -68,14 +66,10 @@ public class ScriptGenerationService {
     );
 
     public ScriptGenerationService(
-            @Value("${app.ai.api-key}") String apiKey,
-            @Value("${app.ai.base-url}") String baseUrl,
-            @Value("${app.ai.model}") String model,
+            AiModelConfig aiModelConfig,
             @Value("${app.ai.standard-max-tokens:4096}") int standardMaxTokens,
             @Value("${app.ai.premium-max-tokens:8192}") int premiumMaxTokens) {
-        this.apiKey = apiKey;
-        this.baseUrl = baseUrl;
-        this.model = model;
+        this.aiModelConfig = aiModelConfig;
         this.standardMaxTokens = standardMaxTokens;
         this.premiumMaxTokens = premiumMaxTokens;
         this.restTemplate = new RestTemplate();
@@ -92,19 +86,28 @@ public class ScriptGenerationService {
     /**
      * Generate a script with tier-aware parameters.
      * Premium users get higher token limits and more precise output.
+     * Routes to the correct AI provider based on request.getModel().
      */
     public String generateScript(GenerateRequest request, boolean isPremium) {
+        // Resolve model → provider URL + API key
+        AiModelConfig.ResolvedModel resolved = aiModelConfig.resolve(request.getModel(), isPremium);
+
         String prompt = buildPrompt(request, isPremium);
         int maxTokens = isPremium ? premiumMaxTokens : standardMaxTokens;
         double temperature = isPremium ? 0.6 : 0.7; // Lower = more focused/accurate
 
-        if (isPremium) {
-            log.info("⚡ Premium generation: maxTokens={}, temp={}", maxTokens, temperature);
-        }
+        log.info("🤖 Generating script via {} (model={}), premium={}, maxTokens={}",
+                resolved.provider(), resolved.modelString(), isPremium, maxTokens);
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setBearerAuth(apiKey);
+        headers.setBearerAuth(resolved.apiKey());
+
+        // Add OpenRouter-specific headers
+        if (resolved.provider() == AiModelConfig.Provider.OPENROUTER) {
+            headers.set("HTTP-Referer", "https://content-script-generator-lime.vercel.app");
+            headers.set("X-Title", "Islamic Script Generator");
+        }
 
         // Determine output language
         String lang = (request.getLanguage() != null && !request.getLanguage().isBlank() && isPremium)
@@ -126,7 +129,7 @@ public class ScriptGenerationService {
                   + "Produce accurate, authentic content from Quran & Sunnah with proper references and transliterations.";
 
         Map<String, Object> body = Map.of(
-                "model", model,
+                "model", resolved.modelString(),
                 "messages", List.of(
                         Map.of("role", "system", "content", systemPrompt),
                         Map.of("role", "user", "content", prompt)
@@ -138,12 +141,13 @@ public class ScriptGenerationService {
         try {
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
             ResponseEntity<String> response = restTemplate.exchange(
-                    baseUrl, HttpMethod.POST, entity, String.class);
+                    resolved.baseUrl(), HttpMethod.POST, entity, String.class);
 
             JsonNode root = objectMapper.readTree(response.getBody());
             return root.path("choices").get(0).path("message").path("content").asText();
         } catch (Exception e) {
-            log.error("Script generation failed: {}", e.getMessage(), e);
+            log.error("Script generation failed (provider={}, model={}): {}",
+                    resolved.provider(), resolved.modelString(), e.getMessage(), e);
             throw new RuntimeException("Content generation is temporarily unavailable. Please try again shortly.");
         }
     }

@@ -22,12 +22,9 @@ public class StreamingScriptService {
 
     private static final Logger log = LoggerFactory.getLogger(StreamingScriptService.class);
 
-    private final String apiKey;
-    private final String baseUrl;
-    private final String model;
+    private final AiModelConfig aiModelConfig;
     private final int standardMaxTokens;
     private final int premiumMaxTokens;
-    private final WebClient webClient;
     private final ObjectMapper objectMapper;
     private final ScriptGenerationService scriptGenerationService;
 
@@ -73,37 +70,51 @@ public class StreamingScriptService {
     );
 
     public StreamingScriptService(
-            @Value("${app.ai.api-key}") String apiKey,
-            @Value("${app.ai.base-url}") String baseUrl,
-            @Value("${app.ai.model}") String model,
+            AiModelConfig aiModelConfig,
             @Value("${app.ai.standard-max-tokens:4096}") int standardMaxTokens,
             @Value("${app.ai.premium-max-tokens:8192}") int premiumMaxTokens,
             ScriptGenerationService scriptGenerationService) {
-        this.apiKey = apiKey;
-        this.baseUrl = baseUrl;
-        this.model = model;
+        this.aiModelConfig = aiModelConfig;
         this.standardMaxTokens = standardMaxTokens;
         this.premiumMaxTokens = premiumMaxTokens;
         this.scriptGenerationService = scriptGenerationService;
         this.objectMapper = new ObjectMapper();
 
-        this.webClient = WebClient.builder()
-                .defaultHeader("Authorization", "Bearer " + apiKey)
+        log.info("✦ StreamingScriptService initialized (multi-provider)");
+    }
+
+    /**
+     * Build a WebClient configured for the given resolved model.
+     */
+    private WebClient buildWebClient(AiModelConfig.ResolvedModel resolved) {
+        WebClient.Builder builder = WebClient.builder()
+                .defaultHeader("Authorization", "Bearer " + resolved.apiKey())
                 .defaultHeader("Content-Type", "application/json")
                 .defaultHeader("Accept", "text/event-stream")
-                .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(4 * 1024 * 1024))
-                .build();
+                .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(4 * 1024 * 1024));
 
-        log.info("✦ StreamingScriptService initialized — model={}", model);
+        // Add OpenRouter-specific headers
+        if (resolved.provider() == AiModelConfig.Provider.OPENROUTER) {
+            builder.defaultHeader("HTTP-Referer", "https://content-script-generator-lime.vercel.app");
+            builder.defaultHeader("X-Title", "Islamic Script Generator");
+        }
+
+        return builder.build();
     }
 
     /**
      * Stream script generation via SSE.
-     * Sends chunks as they arrive from the NVIDIA API.
+     * Sends chunks as they arrive from the AI provider (NVIDIA or OpenRouter).
      * Returns the SseEmitter and accumulates the full script via callback.
      */
     public SseEmitter streamScript(GenerateRequest request, boolean isPremium,
                                     ScriptStreamCallback callback) {
+        // Resolve model → provider URL + API key
+        AiModelConfig.ResolvedModel resolved = aiModelConfig.resolve(request.getModel(), isPremium);
+
+        log.info("🔄 Streaming via {} (model={}), premium={}",
+                resolved.provider(), resolved.modelString(), isPremium);
+
         // 5-minute timeout for long generations
         SseEmitter emitter = new SseEmitter(300_000L);
         AtomicBoolean completed = new AtomicBoolean(false);
@@ -114,7 +125,7 @@ public class StreamingScriptService {
         double temperature = isPremium ? 0.6 : 0.7;
 
         Map<String, Object> body = Map.of(
-                "model", model,
+                "model", resolved.modelString(),
                 "messages", List.of(
                         Map.of("role", "system", "content", systemPrompt),
                         Map.of("role", "user", "content", prompt)
@@ -139,12 +150,15 @@ public class StreamingScriptService {
             log.error("SSE emitter error: {}", error.getMessage());
         });
 
+        // Build a WebClient for this specific provider
+        WebClient webClient = buildWebClient(resolved);
+
         // Make the streaming call
         try {
             String bodyJson = objectMapper.writeValueAsString(body);
 
             webClient.post()
-                    .uri(baseUrl)
+                    .uri(resolved.baseUrl())
                     .accept(MediaType.TEXT_EVENT_STREAM)
                     .contentType(MediaType.APPLICATION_JSON)
                     .bodyValue(bodyJson)
@@ -197,7 +211,8 @@ public class StreamingScriptService {
                                 }
                             },
                             error -> {
-                                log.error("Stream error: {}", error.getMessage());
+                                log.error("Stream error (provider={}, model={}): {}",
+                                        resolved.provider(), resolved.modelString(), error.getMessage());
                                 if (completed.compareAndSet(false, true)) {
                                     // Fall back to non-streaming generation
                                     log.info("⚠ Falling back to non-streaming generation...");
@@ -240,7 +255,8 @@ public class StreamingScriptService {
                             }
                     );
         } catch (Exception e) {
-            log.error("Failed to initiate streaming: {}", e.getMessage());
+            log.error("Failed to initiate streaming (provider={}, model={}): {}",
+                    resolved.provider(), resolved.modelString(), e.getMessage());
             // Fall back to non-streaming
             try {
                 String script = scriptGenerationService.generateScript(request, isPremium);

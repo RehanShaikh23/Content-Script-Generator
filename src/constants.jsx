@@ -108,3 +108,14 @@ export const LANGUAGES = [
   { value: 'french',   label: 'Français (French)',      icon: '🇫🇷', premium: true },
   { value: 'spanish',  label: 'Español (Spanish)',      icon: '🇪🇸', premium: true },
 ];
+
+// ── LLM Model Options ──
+export const LLM_MODELS = [
+  { value: 'default',                        label: 'Llama 3.3 70B',       sublabel: 'Default · Fast',          icon: '🦙' },
+  { value: 'deepseek/deepseek-chat',         label: 'DeepSeek V3',         sublabel: 'Free · Powerful',         icon: '🔮' },
+  { value: 'google/gemma-2-9b-it:free',      label: 'Gemma 2 9B',          sublabel: 'Free · Compact',          icon: '💎' },
+  { value: 'openai/gpt-4o',                  label: 'GPT-4o',              sublabel: 'Premium · Advanced',      icon: '🧠', premium: true },
+  { value: 'anthropic/claude-3.5-sonnet',    label: 'Claude 3.5 Sonnet',   sublabel: 'Premium · Creative',      icon: '✨', premium: true },
+  { value: 'google/gemini-2.0-flash-001',    label: 'Gemini 2.0 Flash',    sublabel: 'Premium · Fast',          icon: '⚡', premium: true },
+  { value: 'mistralai/mistral-large-latest', label: 'Mistral Large',       sublabel: 'Premium · Multilingual',  icon: '🌊', premium: true },
+];
