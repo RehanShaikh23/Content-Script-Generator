@@ -16,8 +16,11 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.time.OffsetDateTime;
+import java.util.Arrays;
 import java.util.HexFormat;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -36,6 +39,21 @@ public class AuthService {
 
     @Value("${app.frontend.url:http://localhost:5173}")
     private String frontendUrl;
+
+    @Value("${app.admin.emails:}")
+    private String adminEmailsConfig;
+
+    private Set<String> getAdminEmails() {
+        if (adminEmailsConfig == null || adminEmailsConfig.isBlank()) return Set.of();
+        return Arrays.stream(adminEmailsConfig.split(","))
+                .map(String::trim)
+                .map(String::toLowerCase)
+                .collect(Collectors.toSet());
+    }
+
+    private boolean isAdminEmail(String email) {
+        return getAdminEmails().contains(email.toLowerCase().trim());
+    }
 
     public AuthResponse signup(SignupRequest signupRequest) {
         if (userRepository.existsByEmail(signupRequest.getEmail())) {
@@ -72,9 +90,10 @@ public class AuthService {
 
         auditLogger.logSignup(user.getEmail(), request);
 
-        String token = jwtUtil.generateToken(user.getEmail());
+        boolean isAdmin = isAdminEmail(user.getEmail());
+        String token = isAdmin ? jwtUtil.generateAdminToken(user.getEmail()) : jwtUtil.generateToken(user.getEmail());
         return new AuthResponse(token, user.getFullName(), user.getEmail(), user.getCredits(),
-                user.getSubscriptionTier(), user.getSubscriptionStatus());
+                user.getSubscriptionTier(), user.getSubscriptionStatus(), isAdmin);
     }
 
     public AuthResponse login(LoginRequest loginRequest) {
@@ -93,9 +112,10 @@ public class AuthService {
 
         auditLogger.logAuthSuccess(user.getEmail(), request);
 
-        String token = jwtUtil.generateToken(user.getEmail());
+        boolean isAdmin = isAdminEmail(user.getEmail());
+        String token = isAdmin ? jwtUtil.generateAdminToken(user.getEmail()) : jwtUtil.generateToken(user.getEmail());
         return new AuthResponse(token, user.getFullName(), user.getEmail(), user.getCredits(),
-                user.getSubscriptionTier(), user.getSubscriptionStatus());
+                user.getSubscriptionTier(), user.getSubscriptionStatus(), isAdmin);
     }
 
     // ── Password Reset ─────────────────────────────────────────────

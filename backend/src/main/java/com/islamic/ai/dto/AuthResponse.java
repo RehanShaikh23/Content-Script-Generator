@@ -12,4 +12,5 @@ public class AuthResponse {
     private int credits;
     private String subscriptionTier;
     private String subscriptionStatus;
+    private boolean admin;
 }

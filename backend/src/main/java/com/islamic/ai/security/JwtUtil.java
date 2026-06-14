@@ -34,6 +34,29 @@ public class JwtUtil {
                 .compact();
     }
 
+    public String generateAdminToken(String email) {
+        Date now = new Date();
+        Date expiry = new Date(now.getTime() + expirationMs);
+
+        return Jwts.builder()
+                .subject(email)
+                .claim("admin", true)
+                .issuedAt(now)
+                .expiration(expiry)
+                .signWith(key)
+                .compact();
+    }
+
+    public boolean isAdmin(String token) {
+        try {
+            Claims claims = parseClaims(token);
+            Boolean admin = claims.get("admin", Boolean.class);
+            return admin != null && admin;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     public String extractEmail(String token) {
         return parseClaims(token).getSubject();
     }

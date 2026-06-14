@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Header from './components/Header';
@@ -15,6 +15,8 @@ import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
+
+const AdminApp = lazy(() => import('./admin/AdminApp'));
 
 function ProtectedApp() {
   const {
@@ -168,6 +170,11 @@ export default function App() {
             }
           />
           <Route path="/" element={<ProtectedApp />} />
+          <Route path="/admin/*" element={
+            <Suspense fallback={<div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0B0D11', color: '#8B8FA3', fontFamily: 'Inter, sans-serif' }}>Loading admin panel...</div>}>
+              <AdminApp />
+            </Suspense>
+          } />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AuthProvider>

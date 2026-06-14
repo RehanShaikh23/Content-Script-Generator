@@ -82,6 +82,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/webhooks/**").permitAll()
                 .requestMatchers("/api/health").permitAll()
+                .requestMatchers("/api/admin/**").authenticated()
                 .requestMatchers("/api/subscription/**").authenticated()
                 .anyRequest().authenticated()
             );

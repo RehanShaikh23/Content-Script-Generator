@@ -13,10 +13,14 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 public class WebConfig implements WebMvcConfigurer {
 
     private final PremiumAccessInterceptor premiumAccessInterceptor;
+    private final AdminAccessInterceptor adminAccessInterceptor;
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(premiumAccessInterceptor)
                 .addPathPatterns("/api/**");
+        registry.addInterceptor(adminAccessInterceptor)
+                .addPathPatterns("/api/admin/**");
     }
 }
+
