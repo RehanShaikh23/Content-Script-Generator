@@ -52,7 +52,7 @@ public class AdminService {
     @Value("${app.admin.sendgrid-from-name:Islamic Script Generator}")
     private String sendgridFromName;
 
-    private final HttpClient httpClient = HttpClient.newBuilder()
+    private static final HttpClient httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(15))
             .build();
 

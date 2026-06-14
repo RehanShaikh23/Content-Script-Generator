@@ -133,9 +133,10 @@ public class AdminController {
                     "draft", draft
             ));
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(Map.of(
+            log.error("❌ Email draft failed: {}", e.getMessage(), e);
+            return ResponseEntity.status(500).body(Map.of(
                     "success", false,
-                    "error", e.getMessage()
+                    "error", "Email draft failed: " + e.getMessage()
             ));
         }
     }
