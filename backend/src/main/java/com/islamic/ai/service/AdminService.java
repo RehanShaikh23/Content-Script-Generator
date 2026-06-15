@@ -134,9 +134,14 @@ public class AdminService {
     // ── AI Email Drafting (OpenRouter / Gemini) ─────────────────────
 
     public String draftEmail(String recipientName, String recipientEmail, String context, String tone) {
+        log.info("✦ Admin draftEmail called: recipient={}, tone={}", recipientEmail, tone);
+
         if (openrouterApiKey == null || openrouterApiKey.isBlank()) {
-            throw new RuntimeException("OpenRouter API key not configured");
+            log.error("❌ OpenRouter API key is empty or null");
+            throw new RuntimeException("OpenRouter API key not configured. Set OPENROUTER_API_KEY in environment.");
         }
+
+        log.info("✦ OpenRouter API key present (length={}), base URL={}", openrouterApiKey.length(), openrouterBaseUrl);
 
         String systemPrompt = """
                 You are an expert email copywriter for "Islamic Script Generator", a SaaS platform that helps 
@@ -177,35 +182,40 @@ public class AdminService {
             userMsg.put("content", userPrompt);
 
             String json = objectMapper.writeValueAsString(requestBody);
+            log.info("✦ Sending request to OpenRouter (model=google/gemini-2.0-flash-001)...");
 
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(openrouterBaseUrl))
                     .header("Authorization", "Bearer " + openrouterApiKey)
                     .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(json))
-                    .timeout(Duration.ofSeconds(30))
+                    .timeout(Duration.ofSeconds(60))
                     .build();
 
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
+            log.info("✦ OpenRouter response: status={}, bodyLength={}", response.statusCode(), response.body().length());
+
             if (response.statusCode() >= 400) {
-                log.error("OpenRouter API error ({}): {}", response.statusCode(), response.body());
-                throw new RuntimeException("AI service error: " + response.statusCode());
+                log.error("❌ OpenRouter API error ({}): {}", response.statusCode(), response.body());
+                throw new RuntimeException("AI service returned error " + response.statusCode() + ": " + response.body());
             }
 
             JsonNode responseJson = objectMapper.readTree(response.body());
             String content = responseJson.path("choices").path(0).path("message").path("content").asText();
 
             if (content == null || content.isBlank()) {
+                log.error("❌ AI returned empty content. Full response: {}", response.body());
                 throw new RuntimeException("AI returned empty response");
             }
 
+            log.info("✅ Email draft generated successfully (length={})", content.length());
             return content;
 
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
-            log.error("Failed to draft email via AI: {}", e.getMessage());
+            log.error("❌ Failed to draft email via AI: {}", e.getMessage(), e);
             throw new RuntimeException("Failed to generate email draft: " + e.getMessage());
         }
     }
