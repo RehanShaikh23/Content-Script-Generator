@@ -168,7 +168,7 @@ public class AdminService {
 
         try {
             ObjectNode requestBody = objectMapper.createObjectNode();
-            requestBody.put("model", "google/gemini-2.0-flash-001");
+            requestBody.put("model", "google/gemini-2.5-flash");
             requestBody.put("max_tokens", 2048);
 
             ArrayNode messages = requestBody.putArray("messages");
