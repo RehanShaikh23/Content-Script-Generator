@@ -14,21 +14,21 @@
   --admin-text: #E8E9EC;
   --admin-text-sec: #8B8FA3;
   --admin-text-muted: #555B70;
-  --admin-accent: #6C5CE7;
-  --admin-accent-2: #A78BFA;
+  --admin-accent: #ecf956;
+  --admin-accent-2: #ecf956;
   --admin-success: #10B981;
   --admin-warning: #F59E0B;
   --admin-danger: #EF4444;
   --admin-info: #3B82F6;
   --admin-font: 'Inter', system-ui, -apple-system, sans-serif;
-  --admin-radius: 12px;
-  --admin-radius-sm: 8px;
-  --admin-radius-lg: 16px;
+  --admin-radius: 30px;
+  --admin-radius-sm: 15px;
+  --admin-radius-lg: 30px;
   --admin-radius-pill: 100px;
   --admin-shadow: 0 4px 24px rgba(0,0,0,0.3);
   --admin-shadow-lg: 0 12px 48px rgba(0,0,0,0.5);
   --admin-transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  --admin-glow: 0 0 20px rgba(108, 92, 231, 0.15);
+  --admin-glow: 0 0 20px rgba(236, 249, 86, 0.15);
 }
 
 /* ── Base Layout ─────────────────────────────────────────────── */
