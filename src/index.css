@@ -1,18 +1,154 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;1,8..60,300&display=swap');
 
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 
 :root{
---bg:#F8F9FA;--surface:#FFFFFF;--silver:#CFD1D4;--border:#A5A9AE;
---text-sec:#5F6266;--text-pri:#181B1E;--font:'Inter',system-ui,sans-serif;
---radius:12px;--radius-sm:8px;--radius-pill:20px;
---shadow-1:0 1px 3px rgba(0,0,0,0.06),0 1px 2px rgba(0,0,0,0.04);
---shadow-2:0 4px 16px rgba(0,0,0,0.08),0 2px 6px rgba(0,0,0,0.04);
---shadow-3:0 20px 60px rgba(0,0,0,0.12),0 4px 12px rgba(0,0,0,0.06);
---transition:0.2s ease;
+  /* The Leap Design System Tokens */
+  --color-espresso-ink: #482317;
+  --color-fog-border: #e5e7eb;
+  --color-cream-canvas: #fafafa;
+  --color-lime-spark: #ecf956;
+  --color-lilac-whisper: #efd8f0;
+  --color-mint-tint: #c6e57d;
+  --color-lemon-cream: #f3fb9a;
+  --color-sky-hush: #b1dcfc;
+
+  /* Typography */
+  --font-tobias: 'Source Serif 4', Georgia, serif;
+  --font-favorit: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-abc-favorit: var(--font-favorit);
+  --font-favorit-bold: var(--font-favorit);
+
+  /* Type Scale */
+  --text-caption: 13px;
+  --text-body: 16px;
+  --text-subheading: 20px;
+  --text-heading-sm: 27px;
+  --text-heading: 30px;
+  --text-heading-lg: 54px;
+  --text-display: 70px;
+
+  /* Shapes & Radii */
+  --radius-buttons: 100px;
+  --radius-cards: 30px;
+  --radius-smallcards: 15px;
+  --radius-nav: 20px;
+  --radius-links: 9px;
+  --radius-body: 6px;
+
+  /* Elevations */
+  --shadow-nav: rgba(0, 0, 0, 0.08) 0px 4px 6px -1px, rgba(0, 0, 0, 0.04) 0px 2px 4px -1px;
+
+  /* Legacy Mapping for Smooth Integration */
+  --bg: var(--color-cream-canvas);
+  --surface: var(--color-cream-canvas);
+  --silver: var(--color-fog-border);
+  --border: var(--color-fog-border);
+  --text-sec: var(--color-espresso-ink);
+  --text-pri: var(--color-espresso-ink);
+  --font: var(--font-favorit);
+  --radius: var(--radius-cards);
+  --radius-sm: var(--radius-smallcards);
+  --radius-pill: var(--radius-buttons);
+  --shadow-1: 0 1px 3px rgba(72,35,23,0.05), 0 1px 2px rgba(72,35,23,0.03);
+  --shadow-2: var(--shadow-nav);
+  --shadow-3: 0 20px 60px rgba(72,35,23,0.1), 0 4px 12px rgba(72,35,23,0.05);
+  --transition: 0.2s ease;
 }
 
-body{font-family:var(--font);background:var(--bg);color:var(--text-sec);-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;line-height:1.6}
+body{font-family:var(--font-favorit);background:var(--color-cream-canvas);color:var(--color-espresso-ink);-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;line-height:1.5}
+
+/* Utility Classes */
+.btn-lime-cta {
+  background: var(--color-lime-spark);
+  color: var(--color-espresso-ink);
+  border-radius: var(--radius-buttons);
+  font-weight: 700;
+  font-family: var(--font-favorit);
+  border: none;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 12px 28px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+.btn-lime-cta:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-nav);
+}
+
+.btn-ghost-espresso {
+  background: transparent;
+  color: var(--color-espresso-ink);
+  border-radius: var(--radius-buttons);
+  font-weight: 700;
+  font-family: var(--font-favorit);
+  border: none;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 10px 20px;
+  transition: background-color 0.2s ease, opacity 0.2s ease;
+}
+.btn-ghost-espresso:hover {
+  background: rgba(72, 35, 23, 0.06);
+}
+
+.btn-outline-espresso {
+  background: transparent;
+  color: var(--color-espresso-ink);
+  border: 1px solid var(--color-espresso-ink);
+  border-radius: var(--radius-buttons);
+  font-weight: 700;
+  font-family: var(--font-favorit);
+  cursor: pointer;
+  padding: 10px 24px;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+.btn-outline-espresso:hover {
+  background: var(--color-espresso-ink);
+  color: var(--color-cream-canvas);
+}
+
+.card-leap {
+  background: var(--color-cream-canvas);
+  border: 1px solid var(--color-fog-border);
+  border-radius: var(--radius-cards);
+  padding: 30px;
+  box-shadow: none;
+}
+
+.heading-serif-display {
+  font-family: var(--font-tobias);
+  font-weight: 300;
+  font-size: 54px;
+  line-height: 1.03;
+  letter-spacing: -1.08px;
+  color: var(--color-espresso-ink);
+}
+
+.heading-serif-lg {
+  font-family: var(--font-tobias);
+  font-weight: 300;
+  font-size: 30px;
+  line-height: 1.2;
+  letter-spacing: -0.6px;
+  color: var(--color-espresso-ink);
+}
+
+.heading-serif-sm {
+  font-family: var(--font-tobias);
+  font-weight: 300;
+  font-size: 27px;
+  line-height: 1.07;
+  letter-spacing: -0.54px;
+  color: var(--color-espresso-ink);
+}
+
+.pastel-wash-lilac { background: var(--color-lilac-whisper); }
+.pastel-wash-mint { background: var(--color-mint-tint); }
+.pastel-wash-lemon { background: var(--color-lemon-cream); }
+.pastel-wash-sky { background: var(--color-sky-hush); }
 
 .app-wrapper{background:var(--bg);padding:2rem 1.25rem;min-height:100vh}
 .app-container{max-width:720px;margin:0 auto}
