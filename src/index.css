@@ -735,15 +735,16 @@ textarea{resize:vertical;min-height:68px}
 .creator-tips__footer-icon{color:var(--text-sec);font-size:0.8rem;opacity:0.5}
 
 /* Locked Tips */
-.creator-tips--locked{background:var(--surface);border-color:rgba(0,0,0,0.06);padding:2rem 1.5rem}
+.creator-tips{background:var(--color-cream-canvas);border:1px solid var(--color-fog-border);border-radius:var(--radius-cards);padding:30px;margin-top:1.5rem;box-shadow:none}
+.creator-tips--locked{background:var(--color-cream-canvas);border:1px solid var(--color-fog-border);border-radius:var(--radius-cards);padding:2.5rem 1.5rem}
 .creator-tips--locked::before,.creator-tips--locked::after{display:none}
 .creator-tips__lock-overlay{text-align:center}
-.creator-tips__lock-icon{font-size:2.2rem;margin-bottom:0.7rem;opacity:0.5;animation:lockFloat 3s ease-in-out infinite}
+.creator-tips__lock-icon{font-size:2.2rem;margin-bottom:0.7rem;opacity:0.6;animation:lockFloat 3s ease-in-out infinite}
 @keyframes lockFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
-.creator-tips__lock-title{font-family:var(--font);font-size:1.15rem;font-weight:700;color:var(--text-pri);margin-bottom:0.5rem}
-.creator-tips__lock-subtitle{font-size:0.78rem;color:var(--text-sec);max-width:380px;margin:0 auto 1rem;line-height:1.6}
-.creator-tips__unlock-btn{background:var(--text-pri);border:none;color:#fff;padding:0.6rem 1.6rem;border-radius:var(--radius-pill);font-size:0.82rem;font-weight:600;cursor:pointer;font-family:var(--font);transition:all 0.25s;box-shadow:var(--shadow-1)}
-.creator-tips__unlock-btn:hover{background:#2d3136;transform:translateY(-2px);box-shadow:var(--shadow-2)}
+.creator-tips__lock-title{font-family:var(--font-tobias);font-size:1.3rem;font-weight:300;color:var(--color-espresso-ink);margin-bottom:0.5rem}
+.creator-tips__lock-subtitle{font-size:0.82rem;color:var(--color-espresso-ink);opacity:0.75;max-width:380px;margin:0 auto 1rem;line-height:1.6}
+.creator-tips__unlock-btn{background:var(--color-lime-spark);border:none;color:var(--color-espresso-ink);padding:0.75rem 1.8rem;border-radius:var(--radius-buttons);font-size:0.85rem;font-weight:700;font-family:var(--font-favorit);text-transform:uppercase;letter-spacing:0.05em;cursor:pointer;transition:all 0.25s;box-shadow:var(--shadow-nav)}
+.creator-tips__unlock-btn:hover{transform:translateY(-1px)}
 .creator-tips__unlock-btn:active{transform:translateY(0)}
 
 /* Mobile Responsive */
