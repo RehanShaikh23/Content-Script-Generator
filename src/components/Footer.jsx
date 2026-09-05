@@ -4,7 +4,7 @@ export default function Footer({ onReportIssue }) {
       <span>آمين — May Allah make your content a sadaqah jaariyah</span>
       {onReportIssue && (
         <button className="footer__report-link" onClick={onReportIssue}>
-          ⚑ Report Issue
+          Report Issue
         </button>
       )}
       <div className="footer__seo-links">

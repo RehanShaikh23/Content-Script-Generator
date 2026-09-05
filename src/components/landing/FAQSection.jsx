@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { useScrollReveal } from '../../hooks/useScrollReveal';
 import { IconChevronDown } from './Icons';
+import { ScrollReveal, ScrollRevealText } from '../ui/ScrollReveal';
 
 const faqs = [
   {
     q: 'What is the Islamic Script Generator?',
-    a: 'An AI-powered tool that creates ready-to-use video scripts for Islamic content — YouTube Shorts, Reels, TikTok, and long-form videos covering Quran, Hadith, Prophet stories, Islamic history, and more.',
+    a: 'An AI-powered tool that creates ready-to-use video scripts for Islamic content across YouTube Shorts, Reels, TikTok, and long-form videos covering Quran, Hadith, Prophet stories, Islamic history, and more.',
   },
   {
     q: 'Is it free to use?',
@@ -13,7 +13,7 @@ const faqs = [
   },
   {
     q: 'What types of Islamic content can I generate?',
-    a: 'Scripts across 8 categories: Quran & Tafsir, Hadith & Sunnah, Prophets\' Stories, Islamic History, Fiqh & Rulings, Duas & Dhikr, Akhirah & Jannah, and Modern Islamic Issues — in multiple tones.',
+    a: 'Scripts across 8 categories: Quran & Tafsir, Hadith & Sunnah, Prophets\' Stories, Islamic History, Fiqh & Rulings, Duas & Dhikr, Akhirah & Jannah, and Modern Islamic Issues in multiple tones.',
   },
   {
     q: 'What languages are supported?',
@@ -27,19 +27,26 @@ const faqs = [
 
 export default function FAQSection() {
   const [openIndex, setOpenIndex] = useState(null);
-  const ref = useScrollReveal();
 
   return (
-    <section className="ln-section ln-section--alt" id="faq" ref={ref}>
-      <div className="ln-section__container ln-scroll-reveal">
-        <div className="ln-section__header">
+    <section className="ln-section ln-section--alt" id="faq">
+      <div className="ln-section__container">
+        <ScrollReveal className="ln-section__header" distance={34} amount={0.35}>
           <span className="ln-section__badge">FAQ</span>
-          <h2 className="ln-section__title">Frequently asked questions</h2>
-        </div>
+          <ScrollRevealText as="h2" className="ln-section__title" delay={0.06} amount={0.45}>
+            Frequently asked questions
+          </ScrollRevealText>
+        </ScrollReveal>
 
         <div className="ln-faq">
           {faqs.map((item, i) => (
-            <div className={`ln-faq__item ${openIndex === i ? 'ln-faq__item--open' : ''}`} key={i}>
+            <ScrollReveal
+              className={`ln-faq__item ${openIndex === i ? 'ln-faq__item--open' : ''}`}
+              delay={0.06 + i * 0.055}
+              amount={0.25}
+              distance={20}
+              key={i}
+            >
               <button
                 className="ln-faq__trigger"
                 onClick={() => setOpenIndex(openIndex === i ? null : i)}
@@ -59,7 +66,7 @@ export default function FAQSection() {
                   <p>{item.a}</p>
                 </div>
               </div>
-            </div>
+            </ScrollReveal>
           ))}
         </div>
       </div>

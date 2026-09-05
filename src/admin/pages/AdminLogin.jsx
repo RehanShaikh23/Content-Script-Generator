@@ -27,17 +27,18 @@ export default function AdminLogin() {
     <div className="admin-login-page">
       <div className="admin-login-card">
         <div className="admin-login__logo">
-          <div className="admin-login__logo-icon">✦</div>
+          <div className="admin-login__logo-icon">ME</div>
           <h1 className="admin-login__title">Admin Panel</h1>
           <p className="admin-login__subtitle">Islamic Script Generator</p>
         </div>
 
-        {error && <div className="admin-alert admin-alert--error">⚠ {error}</div>}
+        {error && <div className="admin-alert admin-alert--error">{error}</div>}
 
         <form onSubmit={handleSubmit}>
           <div className="admin-field">
-            <label className="admin-field__label">Email Address</label>
+            <label className="admin-field__label" htmlFor="admin-email">Email Address</label>
             <input
+              id="admin-email"
               type="email"
               className="admin-field__input"
               value={email}
@@ -49,8 +50,9 @@ export default function AdminLogin() {
           </div>
 
           <div className="admin-field">
-            <label className="admin-field__label">Password</label>
+            <label className="admin-field__label" htmlFor="admin-password">Password</label>
             <input
+              id="admin-password"
               type="password"
               className="admin-field__input"
               value={password}
@@ -69,7 +71,7 @@ export default function AdminLogin() {
             {loading ? (
               <><div className="admin-spinner" /> Signing in...</>
             ) : (
-              '✦ Sign In'
+              'Sign In'
             )}
           </button>
         </form>

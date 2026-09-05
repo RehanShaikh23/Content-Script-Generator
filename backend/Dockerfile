@@ -19,7 +19,7 @@ COPY --from=build /app/target/*.jar app.jar
 
 EXPOSE 8082
 
-ENTRYPOINT ["java", "-jar", \
+ENTRYPOINT ["java", \
             "-Xmx400m", "-Xms200m", \
             "-Djava.security.egd=file:/dev/./urandom", \
-            "app.jar"]
+            "-jar", "app.jar"]

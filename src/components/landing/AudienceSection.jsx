@@ -33,7 +33,7 @@ export default function AudienceSection() {
         <div className="ln-section__header">
           <span className="ln-section__badge">Who It's For</span>
           <h2 className="ln-section__title">Built for Muslim creators worldwide</h2>
-          <p className="ln-section__subtitle">Whether you create shorts, long-form, or educational content — this tool is for you.</p>
+          <p className="ln-section__subtitle">Whether you create shorts, long-form, or educational content, this tool is for you.</p>
         </div>
 
         <div className="ln-audience-grid">

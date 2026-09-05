@@ -8,9 +8,9 @@ import EmailComposer from './pages/EmailComposer';
 import './admin.css';
 
 const NAV_ITEMS = [
-  { id: 'dashboard', label: 'Dashboard', icon: '📊' },
-  { id: 'users', label: 'Users', icon: '👥' },
-  { id: 'email', label: 'Email Composer', icon: '✉️' },
+  { id: 'dashboard', label: 'Dashboard', icon: '01' },
+  { id: 'users', label: 'Users', icon: '02' },
+  { id: 'email', label: 'Email Composer', icon: '03' },
 ];
 
 function AdminPanel() {
@@ -38,14 +38,14 @@ function AdminPanel() {
           className="admin-mobile-toggle"
           onClick={() => setSidebarOpen(!sidebarOpen)}
         >
-          ☰
+          Menu
         </button>
 
         {/* Sidebar */}
         <aside className={`admin-sidebar ${sidebarOpen ? 'admin-sidebar--open' : ''}`}>
           <div className="admin-sidebar__brand">
             <div className="admin-sidebar__logo">
-              <div className="admin-sidebar__logo-icon">✦</div>
+              <div className="admin-sidebar__logo-icon">ME</div>
               <div>
                 <div className="admin-sidebar__logo-text">Admin Panel</div>
                 <span className="admin-sidebar__logo-badge">Islamic Script Generator</span>

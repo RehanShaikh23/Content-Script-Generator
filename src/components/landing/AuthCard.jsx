@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { IconEye, IconEyeOff, IconMail, IconLock, IconUser, IconLoader } from './Icons';
+import { ScrollReveal, ScrollRevealText } from '../ui/ScrollReveal';
 
 /**
  * Reusable premium auth card for login/signup/forgot/reset.
@@ -32,6 +33,13 @@ export default function AuthCard({ mode = 'login', onSubmit, error, isLoading })
 
   return (
     <div className="ln-auth" id="auth-section">
+      <ScrollReveal className="ln-auth__intro" distance={24} amount={0.45}>
+        <span className="ln-auth__intro-label">Your creative practice</span>
+        <ScrollRevealText as="p" delay={0.08} amount={0.45}>
+          A focused place to turn Islamic knowledge into clear, compelling stories your audience can carry with them.
+        </ScrollRevealText>
+        <span className="ln-auth__intro-meta">Plan · Write · Refine · Publish</span>
+      </ScrollReveal>
       <div className="ln-auth__card">
         {/* Header */}
         <div className="ln-auth__header">

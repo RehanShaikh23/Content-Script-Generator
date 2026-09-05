@@ -16,6 +16,9 @@ dist-ssr
 .env
 *.env
 backend/.env
+backend/.m2-cache/
+backend/target/
+.superpowers/
 
 # Editor directories and files
 .vscode/*

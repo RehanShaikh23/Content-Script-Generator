@@ -1,5 +1,5 @@
-import { useScrollReveal } from '../../hooks/useScrollReveal';
 import { IconSparkles, IconScissors, IconLayers, IconGlobe, IconCalendar, IconTarget } from './Icons';
+import { ScrollReveal, ScrollRevealText } from '../ui/ScrollReveal';
 
 const features = [
   {
@@ -35,26 +35,33 @@ const features = [
 ];
 
 export default function FeaturesSection() {
-  const ref = useScrollReveal();
-
   return (
-    <section className="ln-section" id="features" ref={ref}>
-      <div className="ln-section__container ln-scroll-reveal">
-        <div className="ln-section__header">
+    <section className="ln-section" id="features">
+      <div className="ln-section__container">
+        <ScrollReveal className="ln-section__header" distance={34} amount={0.35}>
           <span className="ln-section__badge">Features</span>
-          <h2 className="ln-section__title">Everything you need to create Islamic content</h2>
+          <ScrollRevealText as="h2" className="ln-section__title" delay={0.06} amount={0.45}>
+            Everything you need to create Islamic content
+          </ScrollRevealText>
           <p className="ln-section__subtitle">Powerful tools designed specifically for Muslim creators and educators.</p>
-        </div>
+        </ScrollReveal>
 
         <div className="ln-features-grid">
           {features.map((feature, i) => (
-            <article className="ln-feature-card" key={i}>
+            <ScrollReveal
+              as="article"
+              className="ln-feature-card"
+              delay={0.08 + i * 0.06}
+              amount={0.2}
+              distance={26}
+              key={i}
+            >
               <div className="ln-feature-card__icon">
                 <feature.icon size={22} />
               </div>
               <h3 className="ln-feature-card__title">{feature.title}</h3>
               <p className="ln-feature-card__text">{feature.description}</p>
-            </article>
+            </ScrollReveal>
           ))}
         </div>
       </div>

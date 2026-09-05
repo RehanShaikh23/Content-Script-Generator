@@ -15,6 +15,7 @@ import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
+import { IconMenu } from './components/landing/Icons';
 
 const AdminApp = lazy(() => import('./admin/AdminApp'));
 
@@ -74,8 +75,9 @@ function ProtectedApp() {
               className="user-bar__history-btn"
               onClick={() => setSidebarOpen(true)}
               title="Script History"
+              aria-label="Open script history"
             >
-              ☰
+              <IconMenu size={18} />
             </button>
             <span className="user-bar__greeting">
               Assalamu Alaikum, <strong>{user.fullName}</strong>
@@ -84,11 +86,11 @@ function ProtectedApp() {
           <div className="user-bar__right">
             {/* Credits — show ∞ for premium */}
             <span className="user-bar__credits" title={isPremium ? 'Unlimited credits' : 'Credits remaining'}>
-              ✦ {isPremium ? '∞' : credits} {!isPremium && credits !== 1 ? 'credits' : isPremium ? '' : 'credit'}
+              {isPremium ? 'Unlimited' : credits} {!isPremium && credits !== 1 ? 'credits' : isPremium ? '' : 'credit'}
             </span>
 
             <button className="user-bar__report-btn" onClick={() => setShowReport(true)} title="Report an Issue">
-              ⚑ Report
+              Report
             </button>
 
             <button className="user-bar__logout" onClick={logout}>
