@@ -30,7 +30,7 @@ public class SecurityConfig {
     private final RateLimitingFilter rateLimitingFilter;
     private final ApiErrorLoggingFilter apiErrorLoggingFilter;
 
-    @Value("${app.cors.allowed-origins:http://localhost:5173}")
+    @Value("${app.cors.allowed-origins:https://content-script-generator-lime.vercel.app/}")
     private String allowedOrigins;
 
     @Value("${app.security.require-https:false}")
