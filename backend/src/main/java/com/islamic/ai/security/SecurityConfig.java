@@ -87,12 +87,9 @@ public class SecurityConfig {
                 .anyRequest().authenticated()
             );
 
-        // HTTPS enforcement for production
-        if (requireHttps) {
-            http.requiresChannel(channel -> channel
-                .anyRequest().requiresSecure()
-            );
-        }
+        // NOTE: HTTPS is enforced by Render's reverse proxy + HSTS header above.
+        // Do NOT use requiresChannel().requiresSecure() — it breaks CORS preflight
+        // behind reverse proxies that terminate TLS (the app sees HTTP internally).
 
         // Order matters: JWT must run first so SecurityContext is populated
         // before rate limiting checks premium status
