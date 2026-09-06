@@ -30,7 +30,7 @@ public class SecurityConfig {
     private final RateLimitingFilter rateLimitingFilter;
     private final ApiErrorLoggingFilter apiErrorLoggingFilter;
 
-    @Value("${app.cors.allowed-origins:https://content-script-generator-lime.vercel.app/}")
+    @Value("${app.cors.allowed-origins:https://content-script-generator-lime.vercel.app}")
     private String allowedOrigins;
 
     @Value("${app.security.require-https:false}")
@@ -112,7 +112,10 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(Arrays.asList(allowedOrigins.split(",")));
+        config.setAllowedOrigins(Arrays.stream(allowedOrigins.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .toList());
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With", "Accept"));
         config.setExposedHeaders(List.of("X-Rate-Limit-Remaining", "Retry-After", "Content-Type"));
