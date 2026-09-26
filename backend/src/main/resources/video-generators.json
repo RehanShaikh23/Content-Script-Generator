@@ -1,0 +1,80 @@
+[
+  {
+    "id": "wan21",
+    "name": "Wan2.1",
+    "category": "Open Source",
+    "generationModes": ["text-to-video", "image-to-video"],
+    "license": "Apache-2.0",
+    "licenseRestrictions": "Review license terms before commercial use",
+    "localGeneration": true,
+    "cloudAvailability": "Community hosted instances",
+    "hardwareRequirement": "High VRAM GPU recommended (12GB+)",
+    "difficulty": "Intermediate",
+    "officialUrl": "https://github.com/Wan-Video/Wan2.1"
+  },
+  {
+    "id": "hunyuan-video",
+    "name": "HunyuanVideo",
+    "category": "Open Source",
+    "generationModes": ["text-to-video"],
+    "license": "Tencent Hunyuan Community License",
+    "licenseRestrictions": "Check Tencent license for commercial use",
+    "localGeneration": true,
+    "cloudAvailability": "Limited",
+    "hardwareRequirement": "High VRAM GPU (24GB+ recommended)",
+    "difficulty": "Advanced",
+    "officialUrl": "https://github.com/Tencent/HunyuanVideo"
+  },
+  {
+    "id": "ltx-video",
+    "name": "LTX-Video",
+    "category": "Open Source",
+    "generationModes": ["text-to-video", "image-to-video"],
+    "license": "Apache-2.0",
+    "licenseRestrictions": "Review license for commercial use",
+    "localGeneration": true,
+    "cloudAvailability": "Available on some platforms",
+    "hardwareRequirement": "Medium VRAM GPU (8GB+)",
+    "difficulty": "Intermediate",
+    "officialUrl": "https://github.com/Lightricks/LTX-Video"
+  },
+  {
+    "id": "cogvideox",
+    "name": "CogVideoX",
+    "category": "Open Weight",
+    "generationModes": ["text-to-video"],
+    "license": "CogVideoX License",
+    "licenseRestrictions": "Non-commercial license — verify before commercial use",
+    "localGeneration": true,
+    "cloudAvailability": "Limited",
+    "hardwareRequirement": "High VRAM GPU (16GB+)",
+    "difficulty": "Advanced",
+    "officialUrl": "https://github.com/THUDM/CogVideo"
+  },
+  {
+    "id": "comfyui",
+    "name": "ComfyUI (Video Workflows)",
+    "category": "Open Source (Workflow Tool)",
+    "generationModes": ["text-to-video", "image-to-video"],
+    "license": "GPL-3.0",
+    "licenseRestrictions": "Tool is GPL; model licenses vary by model used",
+    "localGeneration": true,
+    "cloudAvailability": "Self-hosted",
+    "hardwareRequirement": "Depends on model used",
+    "difficulty": "Intermediate to Advanced",
+    "officialUrl": "https://github.com/comfyanonymous/ComfyUI"
+  },
+  {
+    "id": "wangp",
+    "name": "WanGP",
+    "category": "Open Source (GUI Wrapper)",
+    "generationModes": ["text-to-video"],
+    "license": "Apache-2.0",
+    "licenseRestrictions": "Wrapper license; underlying model license applies separately",
+    "localGeneration": true,
+    "cloudAvailability": "Self-hosted",
+    "hardwareRequirement": "Depends on underlying model",
+    "difficulty": "Beginner to Intermediate",
+    "officialUrl": "https://github.com/deepbeepmeep/WanGP"
+  }
+]
