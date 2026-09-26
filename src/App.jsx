@@ -31,6 +31,15 @@ function ProtectedApp() {
   const [showCalendar, setShowCalendar] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
 
+  // Announcement bar — Visual Scene Agent
+  const [showAnnouncement, setShowAnnouncement] = useState(() => {
+    return localStorage.getItem('dismiss-visual-agent-announce') !== 'true';
+  });
+  const dismissAnnouncement = () => {
+    setShowAnnouncement(false);
+    localStorage.setItem('dismiss-visual-agent-announce', 'true');
+  };
+
   // Listen for upgrade event from ScriptForm
   useEffect(() => {
     const handler = () => setShowPricing(true);
@@ -98,6 +107,26 @@ function ProtectedApp() {
             </button>
           </div>
         </div>
+
+        {/* ── Announcement Bar — Visual Scene Agent ── */}
+        {showAnnouncement && (
+          <div className="announce-bar">
+            <div className="announce-bar__content">
+              <span className="announce-bar__badge">NEW</span>
+              <span className="announce-bar__text">
+                <strong>🎬 AI Visual Direction</strong> — Generate camera angles, AI video prompts, lighting & search references for every scene in your script.
+              </span>
+            </div>
+            <button
+              className="announce-bar__dismiss"
+              onClick={dismissAnnouncement}
+              aria-label="Dismiss announcement"
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
         <Header />
         <SubscriptionModal
           isOpen={showPricing}
