@@ -15,6 +15,7 @@ public class RateLimitConfig {
     private Tier report = new Tier(5, 60);
     private Tier forgotPassword = new Tier(3, 60);
     private Tier general = new Tier(60, 1);
+    private Tier visualScene = new Tier(30, 60);
 
     @Data
     public static class Tier {

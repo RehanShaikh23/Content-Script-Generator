@@ -35,6 +35,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
     private final Cache<String, Bucket> reportBuckets;
     private final Cache<String, Bucket> forgotPasswordBuckets;
     private final Cache<String, Bucket> generalBuckets;
+    private final Cache<String, Bucket> visualSceneBuckets;
 
     public RateLimitingFilter(RateLimitConfig config, SecurityAuditLogger auditLogger,
                               UserRepository userRepository) {
@@ -47,6 +48,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         this.reportBuckets         = buildCache(config.getReport().getMinutes());
         this.forgotPasswordBuckets = buildCache(config.getForgotPassword().getMinutes());
         this.generalBuckets        = buildCache(config.getGeneral().getMinutes());
+        this.visualSceneBuckets    = buildCache(config.getVisualScene().getMinutes());
     }
 
     @Override
@@ -150,6 +152,9 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         }
         if ("POST".equalsIgnoreCase(method) && path.equals("/api/report")) {
             return new TierContext("report", reportBuckets, config.getReport());
+        }
+        if ("POST".equalsIgnoreCase(method) && path.startsWith("/api/visual-scene/")) {
+            return new TierContext("visual-scene", visualSceneBuckets, config.getVisualScene());
         }
         if (path.startsWith("/api/")) {
             return new TierContext("general", generalBuckets, config.getGeneral());
