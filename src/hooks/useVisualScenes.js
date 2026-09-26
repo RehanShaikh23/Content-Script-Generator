@@ -33,6 +33,10 @@ export function useVisualScenes(token) {
   const generationIdRef = useRef(null);
   const abortControllerRef = useRef(null);
   const scriptIdRef = useRef(null);
+  const tokenRef = useRef(token);
+
+  // Keep tokenRef in sync so callbacks always have the latest token
+  useEffect(() => { tokenRef.current = token; }, [token]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -101,9 +105,9 @@ export function useVisualScenes(token) {
       },
     };
 
-    const response = await apiPost('/visual-scene/generate', request, token);
+    const response = await apiPost('/visual-scene/generate', request, tokenRef.current);
     return response;
-  }, [token, visualSettings]);
+  }, [visualSettings]);
 
   /**
    * Run the concurrency-limited queue.
@@ -195,7 +199,7 @@ export function useVisualScenes(token) {
         category: category || '',
         videoFormat: videoFormat || '',
         visualStyle: visualSettings.visualStyle,
-      }, token);
+      }, tokenRef.current);
       profile = profileResponse.globalVisualProfile || null;
       setGlobalProfile(profile);
     } catch (err) {
@@ -227,7 +231,7 @@ export function useVisualScenes(token) {
     if (generationIdRef.current === generationId) {
       setIsProcessing(false);
     }
-  }, [token, visualSettings, extractScenes, processSceneQueue]);
+  }, [visualSettings, extractScenes, processSceneQueue]);
 
   /**
    * Retry a single failed scene.
