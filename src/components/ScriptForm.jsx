@@ -2,7 +2,10 @@ import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import OptionGrid from './OptionGrid';
 import ChipGroup from './ChipGroup';
 import DhikrOverlay from './DhikrOverlay';
+import VisualSceneControls from './VisualSceneControls';
+import VisualScenePanel from './VisualScenePanel';
 import { useAuth } from '../context/AuthContext';
+import { useVisualScenes } from '../hooks/useVisualScenes';
 import { apiStream, apiPost, apiDownload } from '../api';
 import {
   VIDEO_FORMATS,
@@ -37,6 +40,9 @@ export default function ScriptForm({ selectedScript, onScriptGenerated }) {
   const showDhikrRef = useRef(false);
   const { token, credits, updateCredits, isPremium } = useAuth();
   const [showUpgrade, setShowUpgrade] = useState(false);
+
+  // ── Visual Scene Agent ──
+  const visualScenes = useVisualScenes(token);
 
   const LOADING_MESSAGES = isPremium
     ? [
@@ -115,6 +121,9 @@ export default function ScriptForm({ selectedScript, onScriptGenerated }) {
     setStreamProgress(0);
     setFromCache(false);
     setLoadingMsg(0);
+
+    // Reset visual scenes when starting a new generation
+    visualScenes.reset();
     streamedScriptRef.current = '';
     doneStreamingRef.current = false;
 
@@ -547,6 +556,52 @@ export default function ScriptForm({ selectedScript, onScriptGenerated }) {
             </div>
           )}
         </div>
+      )}
+
+      {/* ── Visual Scene Agent ── */}
+      {script && !isStreaming && !isGenerating && (
+        <>
+          {/* Visual Controls — style/aspect/duration selectors */}
+          <VisualSceneControls
+            settings={visualScenes.visualSettings}
+            onUpdateSetting={visualScenes.updateSetting}
+            onGenerate={() => visualScenes.startVisualGeneration(script, topic, category, videoFormat)}
+            isProcessing={visualScenes.isProcessing}
+            isProfileLoading={visualScenes.isProfileLoading}
+            scenesCount={visualScenes.scenes.length > 0
+              ? visualScenes.scenes.length
+              : Math.max(1, Math.min(script.split(/\n\s*\n/).filter(b => b.trim()).length, 20))
+            }
+          />
+
+          {/* Scene Panels — one per detected scene */}
+          {visualScenes.scenes.length > 0 && (
+            <div className="card visual-scenes-list">
+              <div className="visual-scenes-list__header">
+                <h3 className="visual-scenes-list__title">
+                  Visual Direction — {visualScenes.scenes.length} Scenes
+                </h3>
+                {visualScenes.isProcessing && (
+                  <button
+                    className="visual-scenes-list__cancel"
+                    onClick={visualScenes.cancelGeneration}
+                  >
+                    ■ Cancel
+                  </button>
+                )}
+              </div>
+              {visualScenes.scenes.map((scene) => (
+                <VisualScenePanel
+                  key={scene.sceneId}
+                  scene={scene}
+                  state={visualScenes.sceneStates[scene.sceneId]}
+                  onRetry={visualScenes.retryScene}
+                  onRegenerate={visualScenes.regenerateScene}
+                />
+              ))}
+            </div>
+          )}
+        </>
       )}
     </>
   );
