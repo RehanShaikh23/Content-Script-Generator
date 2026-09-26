@@ -119,3 +119,45 @@ export const LLM_MODELS = [
   { value: 'google/gemini-2.0-flash-001',    label: 'Gemini 2.0 Flash',    sublabel: 'Premium · Fast',          icon: '⚡', premium: true },
   { value: 'mistralai/mistral-large-latest', label: 'Mistral Large',       sublabel: 'Premium · Multilingual',  icon: '🌊', premium: true },
 ];
+
+// ── Visual Scene Agent — Style Presets ──
+export const VISUAL_STYLES = [
+  { value: 'cinematic_documentary', label: 'Cinematic Documentary' },
+  { value: 'historical_documentary', label: 'Historical Documentary' },
+  { value: 'realistic', label: 'Realistic' },
+  { value: 'dark_cinematic', label: 'Dark Cinematic' },
+  { value: 'warm_cinematic', label: 'Warm Cinematic' },
+  { value: 'epic_historical', label: 'Epic Historical' },
+  { value: 'minimal_documentary', label: 'Minimal Documentary' },
+  { value: 'photorealistic', label: 'Photorealistic' },
+  { value: 'slow_atmospheric', label: 'Slow Atmospheric' },
+  { value: 'news_documentary', label: 'News Documentary' },
+];
+
+export const VISUAL_ASPECT_RATIOS = [
+  { value: '16:9', label: '16:9', sublabel: 'Landscape' },
+  { value: '9:16', label: '9:16', sublabel: 'Portrait' },
+  { value: '1:1', label: '1:1', sublabel: 'Square' },
+];
+
+export const VISUAL_DURATIONS = [
+  { value: 5, label: '5s' },
+  { value: 8, label: '8s' },
+  { value: 10, label: '10s' },
+  { value: 15, label: '15s' },
+];
+
+export const GENERATION_MODES = [
+  { value: 'ai_generated', label: 'AI Generated' },
+  { value: 'stock_footage', label: 'Stock Footage' },
+  { value: 'mixed', label: 'Mixed' },
+];
+
+// ── Search URL Builders (frontend-only — AI returns query strings only) ──
+export const SEARCH_URL_BUILDERS = {
+  pinterest: (q) => `https://www.pinterest.com/search/pins/?q=${encodeURIComponent(q)}`,
+  googleImages: (q) => `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(q)}`,
+  googleVideo: (q) => `https://www.google.com/search?tbm=vid&q=${encodeURIComponent(q)}`,
+  youtube: (q) => `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`,
+};
+
