@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import OptionGrid from './OptionGrid';
 import ChipGroup from './ChipGroup';
+import ModelDropdown from './ModelDropdown';
 import DhikrOverlay from './DhikrOverlay';
 import VisualSceneControls from './VisualSceneControls';
 import VisualScenePanel from './VisualScenePanel';
@@ -406,7 +407,7 @@ export default function ScriptForm({ selectedScript, onScriptGenerated }) {
           </div>
         )}
 
-        {/* LLM Model Selector */}
+        {/* LLM Model Selector — Smooth Dropdown */}
         <div className="field">
           <label className="field__label">
             🤖 AI Model
@@ -414,25 +415,16 @@ export default function ScriptForm({ selectedScript, onScriptGenerated }) {
               {isPremium ? ' — choose your preferred AI' : ' — upgrade for premium models'}
             </span>
           </label>
-          <div className="llm-model-selector">
-            {availableModels.map((m) => (
-              <button
-                key={m.value}
-                type="button"
-                className={`llm-model-chip${selectedModel === m.value ? ' active' : ''}`}
-                onClick={() => setSelectedModel(m.value)}
-              >
-                <span className="llm-model-chip__icon">{m.icon}</span>
-                <span className="llm-model-chip__info">
-                  <span className="llm-model-chip__label">{m.label}</span>
-                  {m.sublabel && <span className="llm-model-chip__sublabel">{m.sublabel}</span>}
-                </span>
-              </button>
-            ))}
-          </div>
+          <ModelDropdown
+            models={availableModels}
+            allModels={LLM_MODELS}
+            selected={selectedModel}
+            onSelect={setSelectedModel}
+            isPremium={isPremium}
+          />
           {!isPremium && (
             <div className="premium-locked-hint">
-              🔒 GPT-4o, Claude, Gemini & more with Premium
+              🔒 GPT-4o, Claude, Gemini &amp; more with Premium
             </div>
           )}
         </div>
