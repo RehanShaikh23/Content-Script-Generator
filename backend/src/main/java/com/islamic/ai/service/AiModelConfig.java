@@ -69,18 +69,18 @@ public class AiModelConfig {
                 nvidiaModel, Provider.NVIDIA, false));
         register(new ModelEntry("deepseek/deepseek-chat", "DeepSeek V3",
                 "deepseek/deepseek-chat", Provider.OPENROUTER, false));
-        register(new ModelEntry("google/gemma-2-9b-it:free", "Gemma 2 9B",
-                "google/gemma-2-9b-it:free", Provider.OPENROUTER, false));
+        register(new ModelEntry("google/gemma-4-26b-a4b-it:free", "Gemma 4 26B",
+                "google/gemma-4-26b-a4b-it:free", Provider.OPENROUTER, false));
 
         // ── Premium-tier models ──
         register(new ModelEntry("openai/gpt-4o", "GPT-4o",
                 "openai/gpt-4o", Provider.OPENROUTER, true));
-        register(new ModelEntry("anthropic/claude-3.5-sonnet", "Claude 3.5 Sonnet",
-                "anthropic/claude-3.5-sonnet", Provider.OPENROUTER, true));
-        register(new ModelEntry("google/gemini-2.0-flash-001", "Gemini 2.0 Flash",
-                "google/gemini-2.0-flash-001", Provider.OPENROUTER, true));
-        register(new ModelEntry("mistralai/mistral-large-latest", "Mistral Large",
-                "mistralai/mistral-large-latest", Provider.OPENROUTER, true));
+        register(new ModelEntry("anthropic/claude-sonnet-4.6", "Claude Sonnet 4.6",
+                "anthropic/claude-sonnet-4.6", Provider.OPENROUTER, true));
+        register(new ModelEntry("google/gemini-2.5-flash", "Gemini 2.5 Flash",
+                "google/gemini-2.5-flash", Provider.OPENROUTER, true));
+        register(new ModelEntry("mistralai/mistral-large", "Mistral Large",
+                "mistralai/mistral-large", Provider.OPENROUTER, true));
 
         log.info("✦ AiModelConfig initialized — {} models ({} free, {} premium)",
                 models.size(),
@@ -102,7 +102,15 @@ public class AiModelConfig {
             return new ResolvedModel(nvidiaModel, nvidiaBaseUrl, nvidiaApiKey, Provider.NVIDIA);
         }
 
-        ModelEntry entry = models.get(modelId);
+        // Keep older deployed frontends working during a rolling upgrade.
+        String currentId = switch (modelId) {
+            case "google/gemma-2-9b-it:free" -> "google/gemma-4-26b-a4b-it:free";
+            case "anthropic/claude-3.5-sonnet" -> "anthropic/claude-sonnet-4.6";
+            case "google/gemini-2.0-flash-001" -> "google/gemini-2.5-flash";
+            case "mistralai/mistral-large-latest" -> "mistralai/mistral-large";
+            default -> modelId;
+        };
+        ModelEntry entry = models.get(currentId);
         if (entry == null) {
             log.warn("⚠ Unknown model '{}', falling back to default", modelId);
             return new ResolvedModel(nvidiaModel, nvidiaBaseUrl, nvidiaApiKey, Provider.NVIDIA);
