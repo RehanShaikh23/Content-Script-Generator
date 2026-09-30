@@ -4,6 +4,17 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 class AiModelConfigTest {
+    @Test
+    void sharedDefaultUsesAvailableNvidiaModelAndAllowsEnvironmentOverride() throws Exception {
+        var properties = new java.util.Properties();
+        try (var input = getClass().getResourceAsStream("/application.properties")) {
+            assertNotNull(input);
+            properties.load(input);
+        }
+        assertEquals("${AI_MODEL:nvidia/llama-3.1-nemotron-70b-instruct}",
+                properties.getProperty("app.ai.model"));
+    }
+
     private final AiModelConfig config = new AiModelConfig(
             "test-nvidia", "https://nvidia.example/chat", "llama",
             "test-openrouter", "https://router.example/chat");

@@ -65,7 +65,7 @@ public class AiModelConfig {
         this.openrouterBaseUrl = openrouterBaseUrl;
 
         // ── Free-tier models ──
-        register(new ModelEntry("default", "Llama 3.3 70B",
+        register(new ModelEntry("default", "Nemotron 70B",
                 nvidiaModel, Provider.NVIDIA, false));
         register(new ModelEntry("deepseek/deepseek-chat", "DeepSeek V3",
                 "deepseek/deepseek-chat", Provider.OPENROUTER, false));
