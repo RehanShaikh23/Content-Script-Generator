@@ -1,5 +1,13 @@
 # React + Vite
 
+## AI provider configuration
+
+The backend uses OpenRouter for all AI features. Set `OPENROUTER_API_KEY` only
+in the backend environment; never expose it through frontend `VITE_*` variables.
+The shared default is `deepseek/deepseek-chat`, optionally overridden with
+`OPENROUTER_DEFAULT_MODEL`. See [production setup](docs/production-generation-troubleshooting.md)
+and `backend/.env.example` for deployment details.
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:

@@ -1,4 +1,12 @@
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8082/api';
+const API_BASE = import.meta.env?.VITE_API_BASE || 'http://localhost:8082/api';
+
+export class ApiError extends Error {
+  constructor(message, status) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+  }
+}
 
 /**
  * Stream an SSE endpoint via fetch + ReadableStream.
@@ -31,7 +39,7 @@ export function apiStream(endpoint, body, token, handlers) {
       if (!res.ok) {
         const text = await res.text();
         let msg = 'Generation failed';
-        try { msg = JSON.parse(text).error || msg; } catch {}
+        try { msg = JSON.parse(text).error || msg; } catch { /* Use the safe default for non-JSON errors. */ }
         onError?.(new Error(msg));
         return;
       }
@@ -59,7 +67,7 @@ export function apiStream(endpoint, body, token, handlers) {
             onCached?.(data);
             break;
           case 'meta':
-            try { onMeta?.(JSON.parse(data)); } catch {}
+            try { onMeta?.(JSON.parse(data)); } catch { /* Ignore malformed optional metadata. */ }
             break;
           case 'done':
             if (!doneEmitted) { doneEmitted = true; onDone?.(); }
@@ -112,7 +120,7 @@ export function apiStream(endpoint, body, token, handlers) {
   return controller;
 }
 
-export async function apiPost(endpoint, body, token, method = 'POST') {
+export async function apiPost(endpoint, body, token, method = 'POST', options = {}) {
   const headers = { 'Content-Type': 'application/json' };
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
@@ -123,30 +131,33 @@ export async function apiPost(endpoint, body, token, method = 'POST') {
     res = await fetch(`${API_BASE}${endpoint}`, {
       method,
       headers,
+      signal: options.signal,
       ...(body ? { body: JSON.stringify(body) } : {}),
     });
   } catch (networkError) {
+    if (networkError.name === 'AbortError') throw networkError;
     throw new Error('Cannot connect to server. Is the backend running?');
   }
 
   // Handle empty responses (e.g. Spring Security 401/403)
   const text = await res.text();
+  if (res.status === 401 && token) throw new ApiError('Session expired or invalid. Please sign out and sign in again.', 401);
   if (!text) {
-    if (res.status === 401) throw new Error('Session expired. Please log in again.');
-    if (res.status === 403) throw new Error('Access denied.');
+    if (res.status === 401) throw new ApiError('Please sign in again.', 401);
+    if (res.status === 403) throw new ApiError('Access denied.', 403);
     if (res.ok) return {};
-    throw new Error(`Server returned empty response (${res.status})`);
+    throw new ApiError(`Server returned empty response (${res.status})`, res.status);
   }
 
   let data;
   try {
     data = JSON.parse(text);
   } catch {
-    throw new Error(`Invalid response from server: ${text.substring(0, 100)}`);
+    throw new ApiError(`Invalid response from server (${res.status})`, res.status);
   }
 
   if (!res.ok) {
-    throw new Error(data.error || data.message || 'Something went wrong');
+    throw new ApiError(data.error || data.message || 'Something went wrong', res.status);
   }
 
   return data;

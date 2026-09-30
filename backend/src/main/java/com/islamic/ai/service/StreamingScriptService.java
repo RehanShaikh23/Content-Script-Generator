@@ -80,7 +80,7 @@ public class StreamingScriptService {
         this.scriptGenerationService = scriptGenerationService;
         this.objectMapper = new ObjectMapper();
 
-        log.info("✦ StreamingScriptService initialized (multi-provider)");
+        log.info("✦ StreamingScriptService initialized (OpenRouter)");
     }
 
     /**
@@ -104,7 +104,7 @@ public class StreamingScriptService {
 
     /**
      * Stream script generation via SSE.
-     * Sends chunks as they arrive from the AI provider (NVIDIA or OpenRouter).
+     * Sends chunks as they arrive from OpenRouter.
      * Returns the SseEmitter and accumulates the full script via callback.
      */
     public SseEmitter streamScript(GenerateRequest request, boolean isPremium,

@@ -6,7 +6,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -22,9 +21,7 @@ public class CalendarGenerationService {
 
     private static final Logger log = LoggerFactory.getLogger(CalendarGenerationService.class);
 
-    private final String apiKey;
-    private final String baseUrl;
-    private final String model;
+    private final AiModelConfig aiModelConfig;
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
 
@@ -76,13 +73,8 @@ public class CalendarGenerationService {
             "default", List.of("8:00 AM", "12:30 PM", "5:00 PM", "9:00 PM")
     );
 
-    public CalendarGenerationService(
-            @Value("${app.ai.api-key}") String apiKey,
-            @Value("${app.ai.base-url}") String baseUrl,
-            @Value("${app.ai.model}") String model) {
-        this.apiKey = apiKey;
-        this.baseUrl = baseUrl;
-        this.model = model;
+    public CalendarGenerationService(AiModelConfig aiModelConfig) {
+        this.aiModelConfig = aiModelConfig;
         this.restTemplate = new RestTemplate();
         this.objectMapper = new ObjectMapper();
         log.info("✦ CalendarGenerationService initialized");
@@ -302,14 +294,17 @@ public class CalendarGenerationService {
     }
 
     private String callAI(String systemPrompt, String userPrompt, boolean isPremium) {
+        var resolved = aiModelConfig.resolve("default", isPremium);
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setBearerAuth(apiKey);
+        headers.setBearerAuth(resolved.apiKey());
+        headers.set("HTTP-Referer", "https://content-script-generator-lime.vercel.app");
+        headers.set("X-Title", "Islamic Script Generator — Calendar");
 
         int maxTokens = isPremium ? 6000 : 4096;
 
         Map<String, Object> body = Map.of(
-                "model", model,
+                "model", resolved.modelString(),
                 "messages", List.of(
                         Map.of("role", "system", "content", systemPrompt),
                         Map.of("role", "user", "content", userPrompt)
@@ -321,7 +316,7 @@ public class CalendarGenerationService {
         try {
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
             ResponseEntity<String> response = restTemplate.exchange(
-                    baseUrl, HttpMethod.POST, entity, String.class);
+                    resolved.baseUrl(), HttpMethod.POST, entity, String.class);
 
             JsonNode root = objectMapper.readTree(response.getBody());
             return root.path("choices").get(0).path("message").path("content").asText();

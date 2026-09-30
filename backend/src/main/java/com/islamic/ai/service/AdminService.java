@@ -182,7 +182,7 @@ public class AdminService {
             userMsg.put("content", userPrompt);
 
             String json = objectMapper.writeValueAsString(requestBody);
-            log.info("✦ Sending request to OpenRouter (model=google/gemini-2.0-flash-001)...");
+            log.info("✦ Sending request to OpenRouter (model=google/gemini-2.5-flash)...");
 
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(openrouterBaseUrl))

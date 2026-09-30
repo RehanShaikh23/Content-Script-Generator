@@ -47,7 +47,7 @@ public class VisualSceneService {
 
     /**
      * Generate visual direction for a single scene.
-     * Uses the configured default NVIDIA model — no premium model selection for visual agent.
+     * Uses the configured OpenRouter default — no premium model selection for visual agent.
      */
     public VisualSceneResponse generateVisualScene(VisualSceneRequest request) {
         // Validate and truncate scene text

@@ -19,7 +19,7 @@ public class AiModelConfig {
 
     private static final Logger log = LoggerFactory.getLogger(AiModelConfig.class);
 
-    public enum Provider { NVIDIA, OPENROUTER }
+    public enum Provider { OPENROUTER }
 
     /**
      * Immutable record describing one selectable LLM model.
@@ -42,9 +42,7 @@ public class AiModelConfig {
             Provider provider
     ) {}
 
-    private final String nvidiaApiKey;
-    private final String nvidiaBaseUrl;
-    private final String nvidiaModel;
+    private final String defaultModel;
     private final String openrouterApiKey;
     private final String openrouterBaseUrl;
 
@@ -52,21 +50,17 @@ public class AiModelConfig {
     private final Map<String, ModelEntry> models = new LinkedHashMap<>();
 
     public AiModelConfig(
-            @Value("${app.ai.api-key}") String nvidiaApiKey,
-            @Value("${app.ai.base-url}") String nvidiaBaseUrl,
-            @Value("${app.ai.model}") String nvidiaModel,
+            @Value("${app.ai.openrouter-default-model:deepseek/deepseek-chat}") String defaultModel,
             @Value("${app.ai.openrouter-api-key:}") String openrouterApiKey,
             @Value("${app.ai.openrouter-base-url:https://openrouter.ai/api/v1/chat/completions}") String openrouterBaseUrl) {
 
-        this.nvidiaApiKey = nvidiaApiKey;
-        this.nvidiaBaseUrl = nvidiaBaseUrl;
-        this.nvidiaModel = nvidiaModel;
+        this.defaultModel = defaultModel;
         this.openrouterApiKey = openrouterApiKey;
         this.openrouterBaseUrl = openrouterBaseUrl;
 
         // ── Free-tier models ──
-        register(new ModelEntry("default", "Nemotron 70B",
-                nvidiaModel, Provider.NVIDIA, false));
+        register(new ModelEntry("default", "Default (OpenRouter)",
+                defaultModel, Provider.OPENROUTER, false));
         register(new ModelEntry("deepseek/deepseek-chat", "DeepSeek V3",
                 "deepseek/deepseek-chat", Provider.OPENROUTER, false));
         register(new ModelEntry("google/gemma-4-26b-a4b-it:free", "Gemma 4 26B",
@@ -94,12 +88,16 @@ public class AiModelConfig {
 
     /**
      * Resolve a user's model selection to the correct provider details.
-     * Falls back to default NVIDIA model if the selection is invalid or unauthorized.
+     * Falls back to the configured OpenRouter default if selection is invalid or unauthorized.
      */
     public ResolvedModel resolve(String modelId, boolean isPremium) {
-        // Null / blank / "default" → NVIDIA
+        if (openrouterApiKey == null || openrouterApiKey.isBlank()) {
+            log.error("OpenRouter API key is not configured; no AI request will be sent");
+            throw new IllegalStateException("AI service is not configured. Please contact support.");
+        }
+        // Null / blank / "default" uses the shared OpenRouter model.
         if (modelId == null || modelId.isBlank() || "default".equals(modelId)) {
-            return new ResolvedModel(nvidiaModel, nvidiaBaseUrl, nvidiaApiKey, Provider.NVIDIA);
+            return resolveDefault();
         }
 
         // Keep older deployed frontends working during a rolling upgrade.
@@ -113,26 +111,20 @@ public class AiModelConfig {
         ModelEntry entry = models.get(currentId);
         if (entry == null) {
             log.warn("⚠ Unknown model '{}', falling back to default", modelId);
-            return new ResolvedModel(nvidiaModel, nvidiaBaseUrl, nvidiaApiKey, Provider.NVIDIA);
+            return resolveDefault();
         }
 
         // Premium gate: free user trying premium model → fallback
         if (entry.premiumOnly() && !isPremium) {
             log.warn("⚠ Free user tried premium model '{}', falling back to default", modelId);
-            return new ResolvedModel(nvidiaModel, nvidiaBaseUrl, nvidiaApiKey, Provider.NVIDIA);
+            return resolveDefault();
         }
 
-        // OpenRouter models
-        if (entry.provider() == Provider.OPENROUTER) {
-            if (openrouterApiKey == null || openrouterApiKey.isBlank()) {
-                log.error("❌ OpenRouter API key not configured, falling back to NVIDIA");
-                return new ResolvedModel(nvidiaModel, nvidiaBaseUrl, nvidiaApiKey, Provider.NVIDIA);
-            }
-            return new ResolvedModel(entry.providerModel(), openrouterBaseUrl, openrouterApiKey, Provider.OPENROUTER);
-        }
+        return new ResolvedModel(entry.providerModel(), openrouterBaseUrl, openrouterApiKey, Provider.OPENROUTER);
+    }
 
-        // NVIDIA models
-        return new ResolvedModel(entry.providerModel(), nvidiaBaseUrl, nvidiaApiKey, Provider.NVIDIA);
+    private ResolvedModel resolveDefault() {
+        return new ResolvedModel(defaultModel, openrouterBaseUrl, openrouterApiKey, Provider.OPENROUTER);
     }
 
     /**

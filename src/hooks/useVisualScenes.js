@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { apiPost } from '../api';
-import { normalizeScenes } from '../utils/sceneNormalizer';
+import { apiPost, ApiError } from '../api.js';
+import { normalizeScenes } from '../utils/sceneNormalizer.js';
 
 const MAX_CONCURRENT = 3;
 
@@ -23,6 +23,7 @@ export function useVisualScenes(token) {
   const [globalProfile, setGlobalProfile] = useState(null);
   const [isProfileLoading, setIsProfileLoading] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState('');
   const [visualSettings, setVisualSettings] = useState({
     visualStyle: 'cinematic_documentary',
     aspectRatio: '16:9',
@@ -90,6 +91,7 @@ export function useVisualScenes(token) {
    * Process a single scene — makes the API call.
    */
   const processScene = useCallback(async (scene, generationId, profile, signal) => {
+    if (!tokenRef.current) throw new ApiError('Please sign in before generating visuals.', 401);
     const request = {
       generationId,
       scriptId: scriptIdRef.current,
@@ -105,7 +107,7 @@ export function useVisualScenes(token) {
       },
     };
 
-    const response = await apiPost('/visual-scene/generate', request, tokenRef.current);
+    const response = await apiPost('/visual-scene/generate', request, tokenRef.current, 'POST', { signal });
     return response;
   }, [visualSettings]);
 
@@ -115,11 +117,12 @@ export function useVisualScenes(token) {
   const processSceneQueue = useCallback(async (scenesToProcess, generationId, profile, signal) => {
     let activeCount = 0;
     let queueIndex = 0;
+    let authFailed = false;
 
     return new Promise((resolve) => {
       function tryStartNext() {
         // Stop if aborted or generation changed
-        if (signal.aborted || generationIdRef.current !== generationId) {
+        if (authFailed || signal.aborted || generationIdRef.current !== generationId) {
           resolve();
           return;
         }
@@ -141,13 +144,21 @@ export function useVisualScenes(token) {
           processScene(scene, generationId, profile, signal)
             .then(data => {
               // Only update if this is still the active generation
-              if (generationIdRef.current === generationId) {
+              if (!signal.aborted && !authFailed && generationIdRef.current === generationId) {
                 updateSceneStatus(scene.sceneId, 'completed', data);
               }
             })
             .catch(err => {
               if (err.name === 'AbortError') return;
               if (generationIdRef.current === generationId) {
+                if (err.status === 401 || err.status === 403) {
+                  authFailed = true;
+                  setError(err.message);
+                  abortControllerRef.current?.abort();
+                  setSceneStates(prev => Object.fromEntries(Object.entries(prev).map(([id, state]) =>
+                    [id, ['queued', 'generating'].includes(state.status)
+                      ? { ...state, status: 'failed', error: err.message } : state])));
+                }
                 updateSceneStatus(scene.sceneId, 'failed', null, err.message || 'Visual direction failed');
               }
             })
@@ -179,6 +190,15 @@ export function useVisualScenes(token) {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
+    setError('');
+    setGlobalProfile(null);
+    if (!tokenRef.current) {
+      generationIdRef.current = null;
+      setError('Please sign in before generating visuals.');
+      setIsProcessing(false);
+      setIsProfileLoading(false);
+      return;
+    }
 
     const abortController = new AbortController();
     abortControllerRef.current = abortController;
@@ -186,7 +206,11 @@ export function useVisualScenes(token) {
     // Extract and normalize scenes
     const { scenes: normalizedScenes, generationId } = extractScenes(scriptText);
 
-    if (normalizedScenes.length === 0) return;
+    if (normalizedScenes.length === 0) {
+      setIsProcessing(false);
+      setIsProfileLoading(false);
+      return;
+    }
 
     setIsProcessing(true);
 
@@ -199,10 +223,18 @@ export function useVisualScenes(token) {
         category: category || '',
         videoFormat: videoFormat || '',
         visualStyle: visualSettings.visualStyle,
-      }, tokenRef.current);
+      }, tokenRef.current, 'POST', { signal: abortController.signal });
+      if (abortController.signal.aborted || generationIdRef.current !== generationId) return;
       profile = profileResponse.globalVisualProfile || null;
       setGlobalProfile(profile);
     } catch (err) {
+      if (abortController.signal.aborted || generationIdRef.current !== generationId) return;
+      if (err.status === 401 || err.status === 403) {
+        setError(err.message);
+        normalizedScenes.forEach(scene => updateSceneStatus(scene.sceneId, 'failed', null, err.message));
+        setIsProcessing(false);
+        return;
+      }
       // Use defaults if profile generation fails
       profile = {
         style: visualSettings.visualStyle.replace(/_/g, ' '),
@@ -215,12 +247,12 @@ export function useVisualScenes(token) {
       };
       setGlobalProfile(profile);
     } finally {
-      setIsProfileLoading(false);
+      if (generationIdRef.current === generationId) setIsProfileLoading(false);
     }
 
     // Check if cancelled during profile generation
     if (abortController.signal.aborted || generationIdRef.current !== generationId) {
-      setIsProcessing(false);
+      if (generationIdRef.current === generationId) setIsProcessing(false);
       return;
     }
 
@@ -231,7 +263,7 @@ export function useVisualScenes(token) {
     if (generationIdRef.current === generationId) {
       setIsProcessing(false);
     }
-  }, [visualSettings, extractScenes, processSceneQueue]);
+  }, [visualSettings, extractScenes, processSceneQueue, updateSceneStatus]);
 
   /**
    * Retry a single failed scene.
@@ -241,15 +273,22 @@ export function useVisualScenes(token) {
     if (!scene) return;
 
     const generationId = generationIdRef.current;
+    setError('');
     updateSceneStatus(sceneId, 'generating');
 
     try {
-      const data = await processScene(scene, generationId, globalProfile, { aborted: false });
-      if (generationIdRef.current === generationId) {
+      if (!abortControllerRef.current || abortControllerRef.current.signal.aborted) {
+        abortControllerRef.current = new AbortController();
+      }
+      const signal = abortControllerRef.current.signal;
+      const data = await processScene(scene, generationId, globalProfile, signal);
+      if (!signal.aborted && generationIdRef.current === generationId) {
         updateSceneStatus(sceneId, 'completed', data);
       }
     } catch (err) {
+      if (err.name === 'AbortError') return;
       if (generationIdRef.current === generationId) {
+        if (err.status === 401 || err.status === 403) setError(err.message);
         updateSceneStatus(sceneId, 'failed', null, err.message || 'Retry failed');
       }
     }
@@ -270,6 +309,7 @@ export function useVisualScenes(token) {
       abortControllerRef.current.abort();
     }
     setIsProcessing(false);
+    setIsProfileLoading(false);
 
     // Mark all generating/queued scenes as cancelled
     setSceneStates(prev => {
@@ -293,6 +333,7 @@ export function useVisualScenes(token) {
     setScenes([]);
     setSceneStates({});
     setGlobalProfile(null);
+    setError('');
     setIsProcessing(false);
     setIsProfileLoading(false);
     generationIdRef.current = null;
@@ -305,6 +346,7 @@ export function useVisualScenes(token) {
     globalProfile,
     isProfileLoading,
     isProcessing,
+    error,
     visualSettings,
 
     // Actions

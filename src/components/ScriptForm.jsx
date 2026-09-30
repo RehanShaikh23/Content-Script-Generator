@@ -567,6 +567,7 @@ export default function ScriptForm({ selectedScript, onScriptGenerated }) {
           />
 
           {/* Scene Panels — one per detected scene */}
+          {visualScenes.error && <p role="alert">{visualScenes.error}</p>}
           {visualScenes.scenes.length > 0 && (
             <div className="card visual-scenes-list">
               <div className="visual-scenes-list__header">

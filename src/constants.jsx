@@ -111,13 +111,13 @@ export const LANGUAGES = [
 
 // ── LLM Model Options ──
 export const LLM_MODELS = [
-  { value: 'default',                        label: 'Llama 3.3 70B',       sublabel: 'Default · Fast',          icon: '🦙' },
+  { value: 'default',                        label: 'Default (OpenRouter)', sublabel: 'Recommended',            icon: '✨' },
   { value: 'deepseek/deepseek-chat',         label: 'DeepSeek V3',         sublabel: 'Free · Powerful',         icon: '🔮' },
-  { value: 'google/gemma-2-9b-it:free',      label: 'Gemma 2 9B',          sublabel: 'Free · Compact',          icon: '💎' },
+  { value: 'google/gemma-4-26b-a4b-it:free', label: 'Gemma 4 26B',        sublabel: 'Free · Compact',          icon: '💎' },
   { value: 'openai/gpt-4o',                  label: 'GPT-4o',              sublabel: 'Premium · Advanced',      icon: '🧠', premium: true },
-  { value: 'anthropic/claude-3.5-sonnet',    label: 'Claude 3.5 Sonnet',   sublabel: 'Premium · Creative',      icon: '✨', premium: true },
-  { value: 'google/gemini-2.0-flash-001',    label: 'Gemini 2.0 Flash',    sublabel: 'Premium · Fast',          icon: '⚡', premium: true },
-  { value: 'mistralai/mistral-large-latest', label: 'Mistral Large',       sublabel: 'Premium · Multilingual',  icon: '🌊', premium: true },
+  { value: 'anthropic/claude-sonnet-4.6',   label: 'Claude Sonnet 4.6',   sublabel: 'Premium · Creative',      icon: '✨', premium: true },
+  { value: 'google/gemini-2.5-flash',       label: 'Gemini 2.5 Flash',    sublabel: 'Premium · Fast',          icon: '⚡', premium: true },
+  { value: 'mistralai/mistral-large',       label: 'Mistral Large',       sublabel: 'Premium · Multilingual',  icon: '🌊', premium: true },
 ];
 
 // ── Visual Scene Agent — Style Presets ──
@@ -160,4 +160,3 @@ export const SEARCH_URL_BUILDERS = {
   googleVideo: (q) => `https://www.google.com/search?tbm=vid&q=${encodeURIComponent(q)}`,
   youtube: (q) => `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`,
 };
-
