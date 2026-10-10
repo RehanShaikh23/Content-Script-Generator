@@ -1,11 +1,11 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import Header from './components/Header';
+import StudioLayout from './components/studio/StudioLayout';
 import ScriptForm from './components/ScriptForm';
 import CreatorTips from './components/CreatorTips';
 import ContentCalendarPlanner from './components/ContentCalendarPlanner';
-import Footer from './components/Footer';
+
 import ReportIssueModal from './components/ReportIssueModal';
 import DailyReminderModal from './components/DailyReminderModal';
 import HistorySidebar from './components/HistorySidebar';
@@ -15,13 +15,13 @@ import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
-import { IconMenu } from './components/landing/Icons';
+
 
 const AdminApp = lazy(() => import('./admin/AdminApp'));
 
-function ProtectedApp() {
+function ProtectedApp({ preview = false }) {
   const {
-    user, loading, logout, credits, subscriptionTier, subscriptionStatus,
+    user: signedInUser, loading, logout, credits: actualCredits, subscriptionTier,
     isPremium, isCancellationScheduled, hasPaidPlan, accessEndDate
   } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -31,14 +31,7 @@ function ProtectedApp() {
   const [showCalendar, setShowCalendar] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
 
-  // Announcement bar — Visual Scene Agent
-  const [showAnnouncement, setShowAnnouncement] = useState(() => {
-    return localStorage.getItem('dismiss-visual-agent-announce') !== 'true';
-  });
-  const dismissAnnouncement = () => {
-    setShowAnnouncement(false);
-    localStorage.setItem('dismiss-visual-agent-announce', 'true');
-  };
+  const [workspaceTab, setWorkspaceTab] = useState('script');
 
   // Listen for upgrade event from ScriptForm
   useEffect(() => {
@@ -47,22 +40,17 @@ function ProtectedApp() {
     return () => window.removeEventListener('openPricingModal', handler);
   }, []);
 
-  if (loading) return null;
+  const user = preview ? { fullName: 'Creator' } : signedInUser;
+  const credits = preview ? 5 : actualCredits;
+  if (loading && !preview) return null;
   if (!user) return <Navigate to="/login" replace />;
 
-  // Format access end date for the user bar
-  const formattedEndDate = accessEndDate
-    ? new Date(accessEndDate).toLocaleDateString('en-US', {
-        month: 'short', day: 'numeric',
-      })
-    : null;
-
   return (
-    <div className="app-wrapper">
+    <StudioLayout user={user} credits={credits} isPremium={isPremium} hasPaidPlan={hasPaidPlan} tab={workspaceTab} onTab={tab => { setWorkspaceTab(tab); setShowCalendar(false); }} showCalendar={showCalendar} onCalendar={() => setShowCalendar(true)} onHistory={() => setSidebarOpen(true)} onUpgrade={() => setShowPricing(true)} onReport={() => setShowReport(true)} onLogout={logout} preview={preview}>
       <HistorySidebar
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
-        onSelectScript={(item) => { setSelectedScript(item); setShowCalendar(false); }}
+        onSelectScript={(item) => { setSelectedScript(item); setShowCalendar(false); setWorkspaceTab('script'); }}
         credits={credits}
         isPremium={isPremium}
         subscriptionTier={subscriptionTier}
@@ -77,57 +65,6 @@ function ProtectedApp() {
         onManageSubscription={() => setShowCancelModal(true)}
       />
 
-      <div className="app-container">
-        <div className="user-bar">
-          <div className="user-bar__left">
-            <button
-              className="user-bar__history-btn"
-              onClick={() => setSidebarOpen(true)}
-              title="Script History"
-              aria-label="Open script history"
-            >
-              <IconMenu size={18} />
-            </button>
-            <span className="user-bar__greeting">
-              Assalamu Alaikum, <strong>{user.fullName}</strong>
-            </span>
-          </div>
-          <div className="user-bar__right">
-            {/* Credits — show ∞ for premium */}
-            <span className="user-bar__credits" title={isPremium ? 'Unlimited credits' : 'Credits remaining'}>
-              {isPremium ? 'Unlimited' : credits} {!isPremium && credits !== 1 ? 'credits' : isPremium ? '' : 'credit'}
-            </span>
-
-            <button className="user-bar__report-btn" onClick={() => setShowReport(true)} title="Report an Issue">
-              Report
-            </button>
-
-            <button className="user-bar__logout" onClick={logout}>
-              Sign Out
-            </button>
-          </div>
-        </div>
-
-        {/* ── Announcement Bar — Visual Scene Agent ── */}
-        {showAnnouncement && (
-          <div className="announce-bar">
-            <div className="announce-bar__content">
-              <span className="announce-bar__badge">NEW</span>
-              <span className="announce-bar__text">
-                <strong>🎬 AI Visual Direction</strong> — Generate camera angles, AI video prompts, lighting & search references for every scene in your script.
-              </span>
-            </div>
-            <button
-              className="announce-bar__dismiss"
-              onClick={dismissAnnouncement}
-              aria-label="Dismiss announcement"
-            >
-              ✕
-            </button>
-          </div>
-        )}
-
-        <Header />
         <SubscriptionModal
           isOpen={showPricing}
           onClose={() => setShowPricing(false)}
@@ -141,18 +78,16 @@ function ProtectedApp() {
           <ContentCalendarPlanner />
         ) : (
           <>
-            <ScriptForm
+            <ScriptForm preview={preview} workspaceTab={workspaceTab} onWorkspaceTab={setWorkspaceTab}
               selectedScript={selectedScript}
               onScriptGenerated={() => setSelectedScript(null)}
             />
             <CreatorTips />
           </>
         )}
-        <Footer onReportIssue={() => setShowReport(true)} />
         <ReportIssueModal isOpen={showReport} onClose={() => setShowReport(false)} />
-        <DailyReminderModal />
-      </div>
-    </div>
+        {!preview && <DailyReminderModal />}
+    </StudioLayout>
   );
 }
 
@@ -201,6 +136,7 @@ export default function App() {
             }
           />
           <Route path="/" element={<ProtectedApp />} />
+          {import.meta.env.DEV && <Route path="/design-preview" element={<ProtectedApp preview />} />}
           <Route path="/admin/*" element={
             <Suspense fallback={<div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0B0D11', color: '#8B8FA3', fontFamily: 'Inter, sans-serif' }}>Loading admin panel...</div>}>
               <AdminApp />

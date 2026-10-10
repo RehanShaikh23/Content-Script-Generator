@@ -1,19 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { apiGet, apiDelete } from '../api';
 import { useAuth } from '../context/AuthContext';
 
-export default function HistorySidebar({ isOpen, onClose, onSelectScript, credits, isPremium, subscriptionTier, hasPaidPlan, isCancellationScheduled, accessEndDate, showCalendar, onLogout, onUpgrade, onReportIssue, onCalendar, onManageSubscription }) {
+export default function HistorySidebar({ isOpen, onClose, onSelectScript, credits, isPremium, subscriptionTier, hasPaidPlan, isCancellationScheduled, accessEndDate, showCalendar, onLogout, onUpgrade, onCalendar }) {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(false);
   const [total, setTotal] = useState(0);
   const [historyLimit, setHistoryLimit] = useState(-1);
   const { token } = useAuth();
 
-  useEffect(() => {
-    if (isOpen && token) loadHistory();
-  }, [isOpen]);
-
-  async function loadHistory() {
+  const loadHistory = useCallback(async () => {
     setLoading(true);
     try {
       const data = await apiGet('/history', token);
@@ -31,7 +27,11 @@ export default function HistorySidebar({ isOpen, onClose, onSelectScript, credit
     } finally {
       setLoading(false);
     }
-  }
+  }, [token]);
+
+  useEffect(() => {
+    if (isOpen && token) loadHistory();
+  }, [isOpen, token, loadHistory]);
 
   async function handleDelete(id, e) {
     e.stopPropagation();
@@ -76,13 +76,13 @@ export default function HistorySidebar({ isOpen, onClose, onSelectScript, credit
       />
 
       {/* Sidebar */}
-      <aside className={`history-sidebar ${isOpen ? 'open' : ''}`}>
+      <aside className={`history-sidebar ${isOpen ? 'open' : ''}`} inert={!isOpen} aria-hidden={!isOpen}>
         <div className="sidebar__header">
           <h3 className="sidebar__title">
             ✦ Script History
             {isPremium && <span className="sidebar__premium-tag">∞</span>}
           </h3>
-          <button className="sidebar__close" onClick={onClose}>✕</button>
+          <button className="sidebar__close" aria-label="Close script history" onClick={onClose}>✕</button>
         </div>
 
         {/* ── Plan Badge (top) ── */}

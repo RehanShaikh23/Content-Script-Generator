@@ -1,22 +1,17 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import OptionGrid from './OptionGrid';
-import ChipGroup from './ChipGroup';
-import ModelDropdown from './ModelDropdown';
+import ScriptComposer from './studio/ScriptComposer';
+import { SampleScript } from './studio/StudioSample';
+import { Sparkle, FileText, ArrowRight } from '@phosphor-icons/react';
+
+
 import DhikrOverlay from './DhikrOverlay';
 import VisualSceneControls from './VisualSceneControls';
 import VisualScenePanel from './VisualScenePanel';
 import { useAuth } from '../context/AuthContext';
 import { useVisualScenes } from '../hooks/useVisualScenes';
-import { apiStream, apiPost, apiDownload } from '../api';
-import {
-  VIDEO_FORMATS,
-  CATEGORIES,
-  TONES,
-  LANGUAGES,
-  LLM_MODELS,
-} from '../constants';
+import { apiStream, apiDownload } from '../api';
 
-export default function ScriptForm({ selectedScript, onScriptGenerated }) {
+export default function ScriptForm({ selectedScript, onScriptGenerated, workspaceTab = 'script', onWorkspaceTab, preview = false }) {
   const [topic, setTopic] = useState('');
   const [extra, setExtra] = useState('');
   const [videoFormat, setVideoFormat] = useState('shorts');
@@ -41,6 +36,7 @@ export default function ScriptForm({ selectedScript, onScriptGenerated }) {
   const showDhikrRef = useRef(false);
   const { token, credits, updateCredits, isPremium } = useAuth();
   const [showUpgrade, setShowUpgrade] = useState(false);
+  const [previewNotice, setPreviewNotice] = useState('');
 
   // ── Visual Scene Agent ──
   const visualScenes = useVisualScenes(token);
@@ -71,16 +67,10 @@ export default function ScriptForm({ selectedScript, onScriptGenerated }) {
       setScript(selectedScript.script || '');
       onScriptGenerated?.();
     }
-  }, [selectedScript]);
+  }, [selectedScript, onScriptGenerated]);
 
   // Premium users always can generate; free users need credits + topic
-  const canGenerate = topic.trim().length > 0 && !isGenerating && (isPremium || credits > 0);
-
-  // Filter options based on premium status
-  const availableFormats = VIDEO_FORMATS.filter(f => !f.premium || isPremium);
-  const availableTones = TONES.filter(t => !t.premium || isPremium);
-  const availableLanguages = LANGUAGES.filter(l => !l.premium || isPremium);
-  const availableModels = LLM_MODELS.filter(m => !m.premium || isPremium);
+  const canGenerate = topic.trim().length > 0 && !isGenerating && (preview || isPremium || credits > 0);
 
   // Memoize formatted script to avoid re-computing on every render
   const formattedScript = useMemo(() => {
@@ -105,6 +95,7 @@ export default function ScriptForm({ selectedScript, onScriptGenerated }) {
   }, [abortStream]);
 
   const handleGenerate = useCallback(() => {
+    if (preview) { setPreviewNotice('This is a design preview. Sign in to generate your own script.'); return; }
     if (!isPremium && credits <= 0) {
       setShowUpgrade(true);
       return;
@@ -197,7 +188,7 @@ export default function ScriptForm({ selectedScript, onScriptGenerated }) {
     });
 
     streamControllerRef.current = controller;
-  }, [canGenerate, isPremium, credits, topic, extra, videoFormat, category, tone, customTone, language, selectedModel, token, abortStream, updateCredits]);
+  }, [preview, canGenerate, isPremium, credits, topic, extra, videoFormat, category, tone, customTone, language, selectedModel, token, abortStream, updateCredits, visualScenes, LOADING_MESSAGES.length]);
 
   // Stop generation mid-stream
   const handleStopGeneration = useCallback(() => {
@@ -273,18 +264,6 @@ export default function ScriptForm({ selectedScript, onScriptGenerated }) {
     }
   }, [showDhikr, isStreaming]);
 
-  // Debounced topic setter (300ms)
-  const topicTimeoutRef = useRef(null);
-  function handleTopicChange(e) {
-    const val = e.target.value;
-    clearTimeout(topicTimeoutRef.current);
-    topicTimeoutRef.current = setTimeout(() => {
-      setTopic(val);
-    }, 150);
-    // Immediately update input value via uncontrolled pattern
-    e.target.value = val;
-  }
-
   return (
     <>
       {/* Dhikr Focus Break Overlay */}
@@ -294,141 +273,19 @@ export default function ScriptForm({ selectedScript, onScriptGenerated }) {
         streamProgress={streamProgress}
         isStreamDone={doneStreamingRef.current}
       />
-      <div className="card">
-        {/* Topic */}
-        <div className="field">
-          <label className="field__label">Topic or Title</label>
-          <input
-            defaultValue={topic}
-            onChange={(e) => setTopic(e.target.value)}
-            placeholder="e.g. The Power of Istighfar, Story of Prophet Musa, Signs of Qiyamah…"
-          />
-        </div>
-
-        {/* Additional Context */}
-        <div className="field">
-          <label className="field__label">
-            Additional context{' '}
-            <span className="field__label-hint">(optional)</span>
-          </label>
-          <textarea
-            value={extra}
-            onChange={(e) => setExtra(e.target.value)}
-            placeholder="Specific ayah, target audience, key points, language preference…"
-          />
-        </div>
-
-        <div className="divider" />
-
-        {/* Video Format */}
-        <div className="field">
-          <label className="field__label">
-            Video Format
-            {!isPremium && <span className="field__label-hint"> — some formats require Premium</span>}
-          </label>
-          <OptionGrid
-            options={availableFormats}
-            columns={availableFormats.length <= 3 ? 3 : 4}
-            activeValue={videoFormat}
-            onChange={setVideoFormat}
-          />
-          {!isPremium && (
-            <div className="premium-locked-hint">
-              🔒 Reels & Long-form formats available with Premium
-            </div>
-          )}
-        </div>
-
-        {/* Content Category */}
-        <div className="field">
-          <label className="field__label">Content Category</label>
-          <OptionGrid
-            options={CATEGORIES}
-            columns={4}
-            activeValue={category}
-            onChange={setCategory}
-          />
-        </div>
-
-        {/* Tone & Style */}
-        <div className="field">
-          <label className="field__label">
-            Tone &amp; Style
-            {!isPremium && <span className="field__label-hint"> — premium tones available with upgrade</span>}
-          </label>
-          <ChipGroup
-            options={availableTones}
-            activeValue={tone}
-            onChange={(val) => {
-              setTone(val);
-              if (val !== 'custom') setCustomTone('');
-            }}
-          />
-
-          {/* Custom Tone Input — premium only */}
-          {tone === 'custom' && isPremium && (
-            <div className="custom-tone-field">
-              <input
-                className="custom-tone-input"
-                value={customTone}
-                onChange={(e) => setCustomTone(e.target.value)}
-                placeholder="Describe your tone, e.g. 'Warm and conversational, like talking to a friend'"
-                maxLength={200}
-              />
-            </div>
-          )}
-        </div>
-
-        {/* Language — premium multi-language */}
-        {isPremium && (
-          <div className="field">
-            <label className="field__label">
-              🌍 Script Language
-              <span className="field__label-hint"> — Premium multi-language</span>
-            </label>
-            <ChipGroup
-              options={availableLanguages}
-              activeValue={language}
-              onChange={setLanguage}
-            />
-            {language !== 'english' && (
-              <div className="language-note">
-                ✦ Script will be generated in {LANGUAGES.find(l => l.value === language)?.label || language}.
-                Quranic ayat will remain in Arabic with transliteration.
-                <br />
-                <span className="language-note__tip">💡 For non-Latin scripts (Arabic, Urdu, Hindi, Bangla), use DOCX export for best formatting.</span>
-              </div>
-            )}
-          </div>
-        )}
-        {!isPremium && (
-          <div className="premium-locked-hint">
-            🌍 Multi-language scripts available with Premium
-          </div>
-        )}
-
-        {/* LLM Model Selector — Smooth Dropdown */}
-        <div className="field">
-          <label className="field__label">
-            🤖 AI Model
-            <span className="field__label-hint">
-              {isPremium ? ' — choose your preferred AI' : ' — upgrade for premium models'}
-            </span>
-          </label>
-          <ModelDropdown
-            models={availableModels}
-            allModels={LLM_MODELS}
-            selected={selectedModel}
-            onSelect={setSelectedModel}
-            isPremium={isPremium}
-          />
-          {!isPremium && (
-            <div className="premium-locked-hint">
-              🔒 GPT-4o, Claude, Gemini &amp; more with Premium
-            </div>
-          )}
-        </div>
-
+      <div className="studio-tabs" role="tablist" aria-label="Creation tools" onKeyDown={event => {
+        const tabs = ['script', 'visuals', 'prompts'];
+        const direction = event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0;
+        if (!direction && event.key !== 'Home' && event.key !== 'End') return;
+        event.preventDefault();
+        const next = event.key === 'Home' ? 'script' : event.key === 'End' ? 'prompts' : tabs[(tabs.indexOf(workspaceTab) + direction + tabs.length) % tabs.length];
+        onWorkspaceTab?.(next);
+        document.getElementById(`tab-${next}`)?.focus();
+      }}>
+        { [['script','Script'],['visuals','Visual Scenes'],['prompts','AI Video Prompts']].map(([id,label]) => <button key={id} role="tab" tabIndex={workspaceTab===id?0:-1} id={`tab-${id}`} aria-controls={`panel-${id}`} aria-selected={workspaceTab===id} className={workspaceTab===id?'is-active':''} onClick={()=>onWorkspaceTab?.(id)}>{label}</button>) }
+      </div>
+      <section role="tabpanel" id="panel-script" aria-labelledby="tab-script" hidden={workspaceTab !== 'script'}>
+      <ScriptComposer topic={topic} setTopic={setTopic} extra={extra} setExtra={setExtra} videoFormat={videoFormat} setVideoFormat={setVideoFormat} category={category} setCategory={setCategory} tone={tone} setTone={setTone} language={language} setLanguage={setLanguage} selectedModel={selectedModel} setSelectedModel={setSelectedModel} customTone={customTone} setCustomTone={setCustomTone} isPremium={isPremium}>
         {/* Upgrade Prompt — only shown for free users */}
         {!isPremium && showUpgrade && (
           <div className="credit-upgrade-prompt">
@@ -450,7 +307,8 @@ export default function ScriptForm({ selectedScript, onScriptGenerated }) {
         )}
 
         {/* Error */}
-        {error && <div className="auth-error">{error}</div>}
+        {error && <div className="auth-error" role="alert">{error}</div>}
+        {previewNotice && <p className="studio-inline-notice" role="status">{previewNotice}</p>}
 
         {/* Generate Button */}
         {isGenerating && !isStreaming ? (
@@ -469,12 +327,12 @@ export default function ScriptForm({ selectedScript, onScriptGenerated }) {
               disabled={!canGenerate}
               onClick={handleGenerate}
             >
-              {isPremium ? ' Generate Premium Script ✍️' : '✦ Generate Script ✦'}
+              Generate Script <Sparkle size={18} weight="fill" />
             </button>
           </div>
         )}
-      </div>
-
+      </ScriptComposer>
+      {!script && !isStreaming && <section className="studio-example-result"><header><h2>Your next story starts here</h2><span>Example script</span></header><SampleScript onTry={() => setTopic('Small habits for a more meaningful morning')} /></section>}
       {/* Generated Script Output */}
       {(script || isStreaming) && (
         <div className={`card script-output ${isStreaming ? 'script-output--streaming' : ''}`}>
@@ -550,6 +408,9 @@ export default function ScriptForm({ selectedScript, onScriptGenerated }) {
         </div>
       )}
 
+      </section>
+      <section role="tabpanel" id={`panel-${workspaceTab==='prompts'?'prompts':'visuals'}`} aria-labelledby={`tab-${workspaceTab==='prompts'?'prompts':'visuals'}`} hidden={workspaceTab==='script'}>
+      {!script && <div className="studio-visual-empty"><img src="/images/morning-routine.png" alt="Example of a cinematic morning scene"/><div><span className="creator-eyebrow">YOUR STORY, SCENE BY SCENE</span><h2>Give your words a world.</h2><p>Generate or open a saved script first. Then get camera directions, AI video prompts, and clip-search suggestions for every scene.</p><button className="studio-btn studio-btn--dark" onClick={()=>onWorkspaceTab?.('script')}><FileText/> Create a script <ArrowRight/></button></div></div>}
       {/* ── Visual Scene Agent ── */}
       {script && !isStreaming && !isGenerating && (
         <>
@@ -596,6 +457,7 @@ export default function ScriptForm({ selectedScript, onScriptGenerated }) {
           )}
         </>
       )}
+      </section>
     </>
   );
 }
@@ -615,7 +477,7 @@ function formatScript(text) {
     // Bold: **text**
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     // Bullet points: * item or - item at start of line
-    .replace(/^[\*\-]\s+(.+)$/gm, '<li>$1</li>')
+    .replace(/^[*-]\s+(.+)$/gm, '<li>$1</li>')
     // Wrap consecutive <li> in <ul>
     .replace(/((?:<li>.*<\/li>\n?)+)/g, '<ul>$1</ul>')
     // Numbered lists: 1. item

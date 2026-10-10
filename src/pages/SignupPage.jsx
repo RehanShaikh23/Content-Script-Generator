@@ -1,12 +1,8 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import LandingNavbar from '../components/landing/LandingNavbar';
-import HeroSection from '../components/landing/HeroSection';
+import Brand from '../components/studio/Brand';
 import AuthCard from '../components/landing/AuthCard';
-import FeaturesSection from '../components/landing/FeaturesSection';
-import CTASection from '../components/landing/CTASection';
-import LandingFooter from '../components/landing/LandingFooter';
 
 export default function SignupPage() {
   const [error, setError] = useState('');
@@ -40,13 +36,9 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="ln-page">
-      <LandingNavbar activePage="signup" />
-      <HeroSection />
-      <AuthCard mode="signup" onSubmit={handleSubmit} error={error} isLoading={isLoading} />
-      <FeaturesSection />
-      <CTASection />
-      <LandingFooter />
+    <div className="creator-signup">
+      <nav className="creator-nav"><Brand /><Link className="studio-btn studio-btn--outline" to="/login">Back to home</Link></nav>
+      <main className="creator-signup__main"><AuthCard mode="signup" onSubmit={handleSubmit} error={error} isLoading={isLoading} /></main>
     </div>
   );
 }
