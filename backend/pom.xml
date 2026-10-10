@@ -84,11 +84,8 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- Email (SMTP) -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-mail</artifactId>
-        </dependency>
+
+
 
         <!-- WebFlux (for WebClient non-blocking SSE streaming) -->
         <dependency>

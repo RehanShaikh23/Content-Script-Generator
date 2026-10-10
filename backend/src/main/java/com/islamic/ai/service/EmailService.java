@@ -4,83 +4,60 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.islamic.ai.model.Report;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.JavaMailSenderImpl;
-import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import jakarta.annotation.PostConstruct;
-import jakarta.mail.internet.MimeMessage;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 
+/**
+ * Lightweight email dispatch service that sends all emails through a
+ * Make.com webhook automation. No SMTP, Resend, or SendGrid required.
+ *
+ * <p>Webhook payload format:
+ * <pre>
+ * {
+ *   "subject": "...",
+ *   "content": "HTML or text body (use {name} for personalization)",
+ *   "recipients": [{ "name": "...", "email": "..." }]
+ * }
+ * </pre>
+ */
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class EmailService {
 
-    private final JavaMailSender mailSender;
     private final ObjectMapper objectMapper;
 
-    @Value("${app.report.recipient:muslimforever833@gmail.com}")
-    private String recipientEmail;
+    @Value("${app.email.webhook-url:https://hook.us2.make.com/de6b44skd6sdvg65x9magqvbxjfyx8za}")
+    private String webhookUrl;
 
-    @Value("${spring.mail.username:}")
-    private String fromEmail;
-
-    @Value("${app.email.resend-api-key:}")
-    private String resendApiKey;
-
-    @Value("${app.email.from:Islamic Script Generator <onboarding@resend.dev>}")
-    private String resendFromAddress;
-
-    private static final int MAX_RETRIES = 3;
-    private static final long RETRY_DELAY_MS = 2000;
-    private static final String RESEND_API_URL = "https://api.resend.com/emails";
+    private static final int MAX_RETRIES = 2;
+    private static final long RETRY_DELAY_MS = 1500;
+    private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(8);
     private static final DateTimeFormatter TIME_FMT =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss XXX");
 
-    private boolean useResend = false;
     private HttpClient httpClient;
 
-    // ── Startup Validation ──────────────────────────────────────────
+    public EmailService(ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
+    }
 
     @PostConstruct
-    public void validateMailConfig() {
-        // Prefer Resend (HTTP) over SMTP — works on cloud platforms that block port 587
-        if (resendApiKey != null && !resendApiKey.isBlank()) {
-            useResend = true;
-            httpClient = HttpClient.newBuilder()
-                    .connectTimeout(Duration.ofSeconds(10))
-                    .build();
-            log.info("✅ Email service configured with Resend (HTTP API), from: {}", resendFromAddress);
-            return;
-        }
-
-        // Fallback to SMTP (local development)
-        if (fromEmail != null && !fromEmail.isBlank()) {
-            log.info("✅ Email service configured with SMTP, sender: {}", fromEmail);
-            try {
-                if (mailSender instanceof JavaMailSenderImpl impl) {
-                    log.info("🔌 Testing SMTP connection to {}:{} ...", impl.getHost(), impl.getPort());
-                    impl.testConnection();
-                    log.info("✅ SMTP connection test PASSED");
-                }
-            } catch (Exception e) {
-                log.error("❌ SMTP connection test FAILED: {}", e.getMessage());
-            }
-            return;
-        }
-
-        log.error("⚠️ No email service configured! Set RESEND_API_KEY (recommended) or MAIL_USERNAME.");
+    public void init() {
+        httpClient = HttpClient.newBuilder()
+                .connectTimeout(Duration.ofSeconds(10))
+                .build();
+        log.info("✅ Email service configured with Make.com webhook");
     }
 
     // ── Public Async Methods ────────────────────────────────────────
@@ -93,7 +70,7 @@ public class EmailService {
         String subject = "[User Report] " + report.getSubject();
         String textBody = buildReportBody(report);
 
-        doSend(recipientEmail, subject, null, textBody, "report id=" + report.getId());
+        dispatchSingle("Admin", "muslimforever833@gmail.com", subject, textBody, "report id=" + report.getId());
     }
 
     /**
@@ -104,7 +81,7 @@ public class EmailService {
         String subject = "Reset Your Password — Islamic Script Generator";
         String htmlBody = buildResetEmailBody(resetLink);
 
-        doSend(email, subject, htmlBody, null, "password reset");
+        dispatchSingle(null, email, subject, htmlBody, "password reset");
     }
 
     /**
@@ -115,28 +92,92 @@ public class EmailService {
         String subject = "Subscription Cancellation Confirmed — Islamic Script Generator";
         String htmlBody = buildCancellationEmailBody(fullName, planName, accessEndDate);
 
-        doSend(email, subject, htmlBody, null, "cancellation");
+        dispatchSingle(fullName, email, subject, htmlBody, "cancellation");
     }
 
-    // ── Core Send Logic (retry + routing) ───────────────────────────
+    /**
+     * Send an admin-composed email to a single recipient via the Make.com webhook.
+     */
+    public void sendAdminEmail(String toEmail, String toName, String subject, String htmlBody) {
+        dispatchSingle(toName, toEmail, subject, htmlBody, "admin email");
+    }
 
     /**
-     * Central send method with retry logic. Routes to Resend HTTP API
-     * or SMTP based on configuration.
+     * Broadcast an email to a list of recipients.
+     * Make.com will iterate over the recipients array and substitute {name} per user.
+     *
+     * @param recipients list of Recipient records
+     * @param subject    email subject
+     * @param content    HTML or text body — use {name} as the personalization token
      */
-    private void doSend(String to, String subject, String htmlBody, String textBody, String context) {
+    public void sendBroadcast(List<Recipient> recipients, String subject, String content) {
+        if (recipients == null || recipients.isEmpty()) {
+            log.warn("⚠ sendBroadcast called with empty recipients list — skipping");
+            return;
+        }
+        dispatchToWebhook(recipients, subject, content, "broadcast (" + recipients.size() + " recipients)");
+    }
+
+    // ── Recipient Record ────────────────────────────────────────────
+
+    /**
+     * Simple recipient record used for batch/broadcast payloads.
+     */
+    public record Recipient(String name, String email) {}
+
+    // ── Core Dispatch Logic ─────────────────────────────────────────
+
+    /**
+     * Convenience wrapper for single-recipient sends.
+     */
+    private void dispatchSingle(String name, String email, String subject, String content, String context) {
+        List<Recipient> recipients = List.of(new Recipient(
+                name != null ? name : "",
+                email
+        ));
+        dispatchToWebhook(recipients, subject, content, context);
+    }
+
+    /**
+     * POST the email payload to the Make.com webhook with retry logic.
+     * Never throws — failures are logged and swallowed so the primary
+     * user flow is never interrupted by email dispatch issues.
+     */
+    private void dispatchToWebhook(List<Recipient> recipients, String subject, String content, String context) {
         for (int attempt = 1; attempt <= MAX_RETRIES; attempt++) {
             try {
-                if (useResend) {
-                    sendViaResend(to, subject, htmlBody, textBody);
-                } else {
-                    sendViaSmtp(to, subject, htmlBody, textBody);
+                ObjectNode payload = objectMapper.createObjectNode();
+                payload.put("subject", subject);
+                payload.put("content", content);
+
+                ArrayNode recipientsArray = payload.putArray("recipients");
+                for (Recipient r : recipients) {
+                    ObjectNode recipientNode = recipientsArray.addObject();
+                    recipientNode.put("name", r.name());
+                    recipientNode.put("email", r.email());
                 }
-                log.info("✅ Email sent successfully to {} ({})", to, context);
+
+                String json = objectMapper.writeValueAsString(payload);
+
+                HttpRequest request = HttpRequest.newBuilder()
+                        .uri(URI.create(webhookUrl))
+                        .header("Content-Type", "application/json")
+                        .POST(HttpRequest.BodyPublishers.ofString(json))
+                        .timeout(REQUEST_TIMEOUT)
+                        .build();
+
+                HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+                if (response.statusCode() >= 400) {
+                    throw new RuntimeException(
+                            "Make.com webhook error (" + response.statusCode() + "): " + response.body());
+                }
+
+                log.info("✅ Email dispatched via Make.com webhook ({}) — recipients={}", context, recipients.size());
                 return;
 
             } catch (Exception e) {
-                log.warn("Failed to send email (attempt {}/{}) for {}: {}",
+                log.warn("⚠ Email dispatch attempt {}/{} failed ({}): {}",
                         attempt, MAX_RETRIES, context, e.getMessage());
 
                 if (attempt < MAX_RETRIES) {
@@ -144,71 +185,15 @@ public class EmailService {
                         Thread.sleep(RETRY_DELAY_MS);
                     } catch (InterruptedException ie) {
                         Thread.currentThread().interrupt();
-                        log.error("Email retry interrupted for {}", context);
+                        log.error("❌ Email dispatch retry interrupted for {}", context);
                         return;
                     }
                 } else {
-                    log.error("❌ All {} email attempts failed for {} to {}",
-                            MAX_RETRIES, context, to);
+                    log.error("❌ All {} email dispatch attempts failed for {} — skipping",
+                            MAX_RETRIES, context);
                 }
             }
         }
-    }
-
-    // ── Resend HTTP API ─────────────────────────────────────────────
-
-    private void sendViaResend(String to, String subject, String htmlBody, String textBody) throws Exception {
-        ObjectNode payload = objectMapper.createObjectNode();
-        payload.put("from", resendFromAddress);
-
-        ArrayNode toArray = payload.putArray("to");
-        toArray.add(to);
-
-        payload.put("subject", subject);
-
-        if (htmlBody != null) {
-            payload.put("html", htmlBody);
-        }
-        if (textBody != null) {
-            payload.put("text", textBody);
-        }
-
-        String json = objectMapper.writeValueAsString(payload);
-
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(RESEND_API_URL))
-                .header("Authorization", "Bearer " + resendApiKey)
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(json))
-                .timeout(Duration.ofSeconds(15))
-                .build();
-
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-
-        if (response.statusCode() >= 400) {
-            throw new RuntimeException("Resend API error (" + response.statusCode() + "): " + response.body());
-        }
-
-        log.debug("Resend API response: {}", response.body());
-    }
-
-    // ── SMTP Fallback (local development) ───────────────────────────
-
-    private void sendViaSmtp(String to, String subject, String htmlBody, String textBody) throws Exception {
-        MimeMessage message = mailSender.createMimeMessage();
-        MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-
-        helper.setFrom(fromEmail);
-        helper.setTo(to);
-        helper.setSubject(subject);
-
-        if (htmlBody != null) {
-            helper.setText(htmlBody, true);
-        } else if (textBody != null) {
-            helper.setText(textBody, false);
-        }
-
-        mailSender.send(message);
     }
 
     // ── Email Body Builders ─────────────────────────────────────────
@@ -248,7 +233,7 @@ public class EmailService {
                         <!-- Body -->
                         <tr><td style="padding:8px 32px 24px;">
                           <p style="font-size:14px;color:#5F6266;line-height:1.7;margin:0 0 20px;">
-                            Assalamu Alaikum,<br><br>
+                            Assalamu Alaikum {name},<br><br>
                             We received a request to reset your password for the Islamic Script Generator.
                             Click the button below to create a new password.
                           </p>
@@ -311,7 +296,7 @@ public class EmailService {
                         <!-- Body -->
                         <tr><td style="padding:8px 32px 24px;">
                           <p style="font-size:14px;color:#5F6266;line-height:1.7;margin:0 0 20px;">
-                            Assalamu Alaikum %s,<br><br>
+                            Assalamu Alaikum {name},<br><br>
                             Your <strong style="color:#181B1E;">%s</strong> subscription has been cancelled.
                             You'll continue to have full access to all your plan features until the end of your current billing cycle.
                           </p>
@@ -347,6 +332,6 @@ public class EmailService {
                   </table>
                 </body>
                 </html>
-                """.formatted(fullName, planName, accessEndDate, accessEndDate);
+                """.formatted(planName, accessEndDate, accessEndDate);
     }
 }

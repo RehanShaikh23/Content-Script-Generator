@@ -277,8 +277,23 @@ export default function EmailComposer({ prefillUser }) {
               </div>
 
               {/* Body */}
-              <div style={{ marginBottom: '0.4rem' }}>
+              <div style={{ marginBottom: '0.4rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <span className="admin-field__label">Email Body (editable)</span>
+                <button
+                  type="button"
+                  className="admin-btn admin-btn--secondary"
+                  style={{ fontSize: '0.65rem', padding: '0.2rem 0.5rem' }}
+                  title="Insert {name} — Make.com will replace this with each recipient's name"
+                  onClick={() => setBody((prev) => prev + '{name}')}
+                >
+                  + {'{name}'} token
+                </button>
+              </div>
+              <div style={{
+                fontSize: '0.68rem', color: 'var(--admin-text-sec)',
+                marginBottom: '0.4rem', lineHeight: 1.5,
+              }}>
+                💡 Use <code style={{ background: 'var(--admin-surface-2)', padding: '0.1rem 0.3rem', borderRadius: '3px' }}>{'{name}'}</code> anywhere in the body — Make.com will substitute each recipient's name automatically.
               </div>
               <textarea
                 className="admin-preview__body-edit"

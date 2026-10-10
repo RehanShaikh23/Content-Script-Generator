@@ -26,7 +26,7 @@ import java.util.*;
  *  - User listing with search/filter/pagination
  *  - Subscription management (upgrade/downgrade/cancel)
  *  - AI-powered email drafting via OpenRouter (Gemini)
- *  - Email sending via Twilio SendGrid
+ *  - Email sending via Make.com webhook
  *  - Dashboard statistics
  */
 @Service
@@ -36,6 +36,7 @@ public class AdminService {
 
     private final UserRepository userRepository;
     private final ObjectMapper objectMapper;
+    private final EmailService emailService;
 
     @Value("${app.ai.openrouter-api-key:}")
     private String openrouterApiKey;
@@ -43,14 +44,7 @@ public class AdminService {
     @Value("${app.ai.openrouter-base-url:https://openrouter.ai/api/v1/chat/completions}")
     private String openrouterBaseUrl;
 
-    @Value("${app.admin.sendgrid-api-key:}")
-    private String sendgridApiKey;
 
-    @Value("${app.admin.sendgrid-from-email:noreply@islamicscriptgenerator.com}")
-    private String sendgridFromEmail;
-
-    @Value("${app.admin.sendgrid-from-name:Islamic Script Generator}")
-    private String sendgridFromName;
 
     private static final HttpClient httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(15))
@@ -220,64 +214,9 @@ public class AdminService {
         }
     }
 
-    // ── Email Sending (Twilio SendGrid) ─────────────────────────────
+    // ── Email Sending (Make.com Webhook) ─────────────────────────────
 
     public void sendEmail(String toEmail, String toName, String subject, String htmlBody) {
-        if (sendgridApiKey == null || sendgridApiKey.isBlank()) {
-            throw new RuntimeException("SendGrid API key not configured. Set SENDGRID_API_KEY in environment.");
-        }
-
-        try {
-            ObjectNode payload = objectMapper.createObjectNode();
-
-            // Personalizations
-            ArrayNode personalizations = payload.putArray("personalizations");
-            ObjectNode personalization = personalizations.addObject();
-            ArrayNode toArray = personalization.putArray("to");
-            ObjectNode toObj = toArray.addObject();
-            toObj.put("email", toEmail);
-            if (toName != null && !toName.isBlank()) {
-                toObj.put("name", toName);
-            }
-
-            // From
-            ObjectNode from = payload.putObject("from");
-            from.put("email", sendgridFromEmail);
-            from.put("name", sendgridFromName);
-
-            // Subject
-            payload.put("subject", subject);
-
-            // Content
-            ArrayNode content = payload.putArray("content");
-            ObjectNode htmlContent = content.addObject();
-            htmlContent.put("type", "text/html");
-            htmlContent.put("value", htmlBody);
-
-            String json = objectMapper.writeValueAsString(payload);
-
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create("https://api.sendgrid.com/v3/mail/send"))
-                    .header("Authorization", "Bearer " + sendgridApiKey)
-                    .header("Content-Type", "application/json")
-                    .POST(HttpRequest.BodyPublishers.ofString(json))
-                    .timeout(Duration.ofSeconds(15))
-                    .build();
-
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-
-            if (response.statusCode() >= 400) {
-                log.error("SendGrid API error ({}): {}", response.statusCode(), response.body());
-                throw new RuntimeException("Failed to send email via SendGrid: " + response.statusCode());
-            }
-
-            log.info("✅ Admin email sent via SendGrid to {} ({})", toEmail, subject);
-
-        } catch (RuntimeException e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("Failed to send email via SendGrid: {}", e.getMessage());
-            throw new RuntimeException("Email sending failed: " + e.getMessage());
-        }
+        emailService.sendAdminEmail(toEmail, toName, subject, htmlBody);
     }
 }
