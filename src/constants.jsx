@@ -112,8 +112,8 @@ export const LANGUAGES = [
 // ── LLM Model Options ──
 export const LLM_MODELS = [
   { value: 'default',                        label: 'Default (OpenRouter)', sublabel: 'Recommended',            icon: '✨' },
-  { value: 'deepseek/deepseek-chat',         label: 'DeepSeek V3',         sublabel: 'Free · Powerful',         icon: '🔮' },
-  { value: 'google/gemma-4-26b-a4b-it:free', label: 'Gemma 4 26B',        sublabel: 'Free · Compact',          icon: '💎' },
+  { value: 'dots-studio/dots-3-note-preview:free', label: 'Dots 3 Note Preview', sublabel: 'Free',         icon: '🔮' },
+  { value: 'thinkingmachines/inkling-small:free',  label: 'Inkling Small',       sublabel: 'Free',         icon: '💎' },
   { value: 'openai/gpt-4o',                  label: 'GPT-4o',              sublabel: 'Premium · Advanced',      icon: '🧠', premium: true },
   { value: 'anthropic/claude-sonnet-4.6',   label: 'Claude Sonnet 4.6',   sublabel: 'Premium · Creative',      icon: '✨', premium: true },
   { value: 'google/gemini-2.5-flash',       label: 'Gemini 2.5 Flash',    sublabel: 'Premium · Fast',          icon: '⚡', premium: true },

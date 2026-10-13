@@ -50,7 +50,7 @@ public class AiModelConfig {
     private final Map<String, ModelEntry> models = new LinkedHashMap<>();
 
     public AiModelConfig(
-            @Value("${app.ai.openrouter-default-model:deepseek/deepseek-chat}") String defaultModel,
+            @Value("${app.ai.openrouter-default-model:dots-studio/dots-3-note-preview:free}") String defaultModel,
             @Value("${app.ai.openrouter-api-key:}") String openrouterApiKey,
             @Value("${app.ai.openrouter-base-url:https://openrouter.ai/api/v1/chat/completions}") String openrouterBaseUrl) {
 
@@ -61,10 +61,10 @@ public class AiModelConfig {
         // ── Free-tier models ──
         register(new ModelEntry("default", "Default (OpenRouter)",
                 defaultModel, Provider.OPENROUTER, false));
-        register(new ModelEntry("deepseek/deepseek-chat", "DeepSeek V3",
-                "deepseek/deepseek-chat", Provider.OPENROUTER, false));
-        register(new ModelEntry("google/gemma-4-26b-a4b-it:free", "Gemma 4 26B",
-                "google/gemma-4-26b-a4b-it:free", Provider.OPENROUTER, false));
+        register(new ModelEntry("dots-studio/dots-3-note-preview:free", "Dots 3 Note Preview",
+                "dots-studio/dots-3-note-preview:free", Provider.OPENROUTER, false));
+        register(new ModelEntry("thinkingmachines/inkling-small:free", "Inkling Small",
+                "thinkingmachines/inkling-small:free", Provider.OPENROUTER, false));
 
         // ── Premium-tier models ──
         register(new ModelEntry("openai/gpt-4o", "GPT-4o",
@@ -102,7 +102,8 @@ public class AiModelConfig {
 
         // Keep older deployed frontends working during a rolling upgrade.
         String currentId = switch (modelId) {
-            case "google/gemma-2-9b-it:free" -> "google/gemma-4-26b-a4b-it:free";
+            case "deepseek/deepseek-chat" -> "dots-studio/dots-3-note-preview:free";
+            case "google/gemma-4-26b-a4b-it:free", "google/gemma-2-9b-it:free" -> "thinkingmachines/inkling-small:free";
             case "anthropic/claude-3.5-sonnet" -> "anthropic/claude-sonnet-4.6";
             case "google/gemini-2.0-flash-001" -> "google/gemini-2.5-flash";
             case "mistralai/mistral-large-latest" -> "mistralai/mistral-large";
