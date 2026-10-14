@@ -1,0 +1,159 @@
+/* One shared 14-second timeline: idea (0–3s), script (3–7s), scenes (7–10s), hold. */
+.creator-hero__preview.studio-motion {
+  --preview-duration: 14s;
+  padding-top: 54px;
+  padding-bottom: 0;
+}
+
+.studio-motion__flow {
+  position: absolute;
+  top: 2px;
+  left: 0;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: #838b76;
+}
+
+.studio-motion__flow > svg { width: 11px; height: 11px; }
+.studio-motion__step { display: flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 600; }
+.studio-motion__step b { display: grid; place-items: center; width: 23px; height: 23px; border-radius: 50%; background: #e7eddb; font-size: 8px; font-weight: 600; }
+.studio-motion .creator-preview-note { top: -4px; right: 2px; font-size: 10px; }
+.studio-motion .studio-mock__textarea { position: relative; color: #556046; }
+.studio-motion__topic { display: inline; }
+
+.studio-motion .studio-mock__main > .studio-btn { position: relative; overflow: hidden; }
+.studio-motion .studio-mock__main > .studio-btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 25%, #d2ffa644 50%, transparent 75%);
+  transform: translateX(-110%);
+  pointer-events: none;
+}
+
+.studio-motion__prompt {
+  position: absolute;
+  left: -12px;
+  bottom: 105px;
+  z-index: 2;
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 13px;
+  border: 1px solid #d7e3c8;
+  border-radius: 11px;
+  background: #fafff4;
+  box-shadow: 0 12px 34px #2337111c;
+  color: #385320;
+  pointer-events: none;
+}
+
+.studio-motion__prompt-icon { display: grid; place-items: center; width: 30px; height: 30px; background: #e5f4d1; border-radius: 8px; }
+.studio-motion__prompt strong { display: block; font-size: 10px; margin-bottom: 4px; }
+.studio-motion__prompt p { font-size: 9px; line-height: 1.55; color: #778267; }
+.studio-motion__prompt > svg { margin-top: 2px; }
+.studio-motion .creator-hero__portrait { bottom: 63px; }
+.studio-motion .creator-hero__portrait img { transform-origin: 50% 55%; }
+.studio-motion__viewfinder { position: absolute; inset: 12px 9px 44px; }
+.studio-motion__viewfinder i { position: absolute; width: 13px; height: 13px; border: 1px solid #ffffffb3; }
+.studio-motion__viewfinder i:nth-child(1) { left: 0; top: 0; border-right: 0; border-bottom: 0; }
+.studio-motion__viewfinder i:nth-child(2) { right: 0; top: 0; border-left: 0; border-bottom: 0; }
+.studio-motion__viewfinder i:nth-child(3) { left: 0; bottom: 0; border-right: 0; border-top: 0; }
+.studio-motion__viewfinder i:nth-child(4) { right: 0; bottom: 0; border-left: 0; border-top: 0; }
+
+.studio-motion__transport { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 32px 8px 0; padding-bottom: 15px; }
+.studio-motion__status { position: relative; padding-left: 14px; }
+.studio-motion__status-dot { position: absolute; top: 5px; left: 0; width: 5px; height: 5px; border-radius: 50%; background: #83ad45; }
+.studio-motion__captions { display: grid; font-size: 10px; font-weight: 600; color: #536544; }
+.studio-motion__captions > span { grid-area: 1 / 1; opacity: 0; }
+.studio-motion__captions > .studio-motion__caption--ready { opacity: 1; }
+.studio-motion__status small { display: block; font-size: 8px; color: #89937e; margin-top: 4px; letter-spacing: .035em; }
+.studio-motion__toggle { display: grid; place-items: center; min-width: 38px; min-height: 38px; padding: 0; border: 1px solid #dce4d1; border-radius: 50%; background: #fafcf6; color: #48632d; transition: background-color 180ms; }
+.studio-motion__toggle svg { width: 13px; height: 13px; }
+.studio-motion__toggle:hover { background: #e9f3db; }
+.studio-motion__toggle:disabled { opacity: .55; cursor: default; }
+.studio-motion__timeline { position: absolute; height: 2px; bottom: 0; left: 0; right: 0; background: #e0e7d7; border-radius: 2px; overflow: hidden; }
+.studio-motion__timeline span { display: block; height: 100%; background: #85af45; transform-origin: left; }
+
+/* CSS owns the frames; React only controls playback and visibility. */
+.studio-motion.is-animated .studio-motion__topic { display: inline-block; max-width: 100%; white-space: nowrap; overflow: hidden; vertical-align: top; animation-name: studio-type; animation-timing-function: steps(45, end); }
+.studio-motion.is-animated .studio-mock__textarea::after { content: ''; display: inline-block; width: 1px; height: 1em; background: #658d32; vertical-align: top; animation-name: studio-caret; }
+.studio-motion.is-animated .studio-mock__main > .studio-btn::after { animation-name: studio-generate; }
+.studio-motion.is-animated .studio-mock__main > .studio-btn > svg { animation-name: studio-spark; }
+.studio-motion.is-animated .sample-script__line { animation-name: studio-line-one; }
+.studio-motion.is-animated .sample-script__line:nth-child(2) { animation-name: studio-line-two; }
+.studio-motion.is-animated .sample-script__line:nth-child(3) { animation-name: studio-line-three; }
+.studio-motion.is-animated .sample-script__visual { animation-name: studio-scene; }
+.studio-motion.is-animated .studio-mock__actions { animation-name: studio-ready; }
+.studio-motion.is-animated .studio-motion__prompt { animation-name: studio-prompt; }
+.studio-motion.is-animated .creator-hero__portrait { animation-name: studio-portrait; }
+.studio-motion.is-animated .creator-hero__portrait img { animation-name: studio-camera; }
+.studio-motion.is-animated .studio-motion__viewfinder { animation-name: studio-focus; }
+.studio-motion.is-animated .studio-motion__timeline span { animation-name: studio-progress; animation-timing-function: linear; }
+.studio-motion.is-animated .studio-motion__step--idea { animation-name: studio-step-idea; }
+.studio-motion.is-animated .studio-motion__step--script { animation-name: studio-step-script; }
+.studio-motion.is-animated .studio-motion__step--scene { animation-name: studio-step-scene; }
+.studio-motion.is-animated .studio-motion__caption--idea { animation-name: studio-caption-idea; }
+.studio-motion.is-animated .studio-motion__caption--script { animation-name: studio-caption-script; }
+.studio-motion.is-animated .studio-motion__caption--scene { animation-name: studio-caption-scene; }
+.studio-motion.is-animated .studio-motion__caption--ready { animation-name: studio-caption-ready; }
+.studio-motion.is-animated *, .studio-motion.is-animated *::after {
+  animation-duration: var(--preview-duration);
+  animation-iteration-count: infinite;
+  animation-play-state: var(--preview-play-state, paused);
+}
+
+@keyframes studio-type {
+  0%, 4% { max-width: 0; }
+  21%, 95% { max-width: calc(100% - 2px); }
+  99%, 100% { max-width: 0; }
+}
+@keyframes studio-caret { 0%, 22%, 96%, 100% { opacity: 1; } 24%, 94% { opacity: 0; } }
+@keyframes studio-generate { 0%, 22% { transform: translateX(-110%); } 36%, 100% { transform: translateX(110%); } }
+@keyframes studio-spark { 0%, 22% { rotate: 0deg; scale: 1; } 29% { scale: 1.35; } 38%, 100% { rotate: 180deg; scale: 1; } }
+@keyframes studio-line-one { 0%, 28%, 100% { opacity: .16; translate: 0 6px; } 35%, 94% { opacity: 1; translate: 0 0; } }
+@keyframes studio-line-two { 0%, 34%, 100% { opacity: .16; translate: 0 6px; } 41%, 94% { opacity: 1; translate: 0 0; } }
+@keyframes studio-line-three { 0%, 40%, 100% { opacity: .16; translate: 0 6px; } 47%, 94% { opacity: 1; translate: 0 0; } }
+@keyframes studio-scene { 0%, 48%, 100% { opacity: .15; translate: 8px 0; } 57%, 94% { opacity: 1; translate: 0 0; } }
+@keyframes studio-prompt { 0%, 59%, 100% { opacity: 0; translate: -12px 10px; scale: .94; } 67%, 92% { opacity: 1; translate: 0 0; scale: 1; } }
+@keyframes studio-ready { 0%, 64%, 100% { opacity: .2; } 72%, 94% { opacity: 1; } }
+@keyframes studio-portrait { 0%, 48%, 100% { translate: 0 7px; rotate: 0deg; } 62%, 90% { translate: 0 -7px; rotate: -2deg; } }
+@keyframes studio-camera { 0%, 48%, 100% { transform: scale(1); } 86%, 94% { transform: scale(1.12); } }
+@keyframes studio-focus { 0%, 48%, 100% { opacity: 0; scale: 1.08; } 59%, 88% { opacity: 1; scale: 1; } 94% { opacity: 0; } }
+@keyframes studio-progress { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes studio-step-idea { 0%, 22% { color: #537632; } 27%, 100% { color: #a6b499; } }
+@keyframes studio-step-script { 0%, 21%, 52%, 100% { color: #a6b499; } 26%, 47% { color: #537632; } }
+@keyframes studio-step-scene { 0%, 47%, 100% { color: #a6b499; } 53%, 94% { color: #537632; } }
+@keyframes studio-caption-idea { 0%, 20% { opacity: 1; translate: 0 0; } 23%, 98% { opacity: 0; translate: 0 -3px; } 100% { opacity: 1; translate: 0 0; } }
+@keyframes studio-caption-script { 0%, 24%, 48%, 100% { opacity: 0; translate: 0 3px; } 27%, 45% { opacity: 1; translate: 0 0; } }
+@keyframes studio-caption-scene { 0%, 49%, 72%, 100% { opacity: 0; translate: 0 3px; } 52%, 69% { opacity: 1; translate: 0 0; } }
+@keyframes studio-caption-ready { 0%, 73%, 97%, 100% { opacity: 0; translate: 0 3px; } 76%, 94% { opacity: 1; translate: 0 0; } }
+
+@media (max-width: 1100px) and (min-width: 761px) {
+  .studio-motion .creator-preview-note { display: none; }
+  .studio-motion__prompt { left: -8px; bottom: 95px; padding: 10px; }
+}
+
+@media (max-width: 760px) {
+  .studio-motion__flow { gap: 7px; }
+  .studio-motion__step { font-size: 9px; }
+  .studio-motion__step b { width: 20px; height: 20px; }
+  .studio-motion__prompt { left: 0; bottom: 98px; padding: 10px; gap: 7px; }
+  .studio-motion__prompt-icon { width: 25px; height: 25px; }
+  .studio-motion__prompt strong { font-size: 9px; }
+  .studio-motion__prompt p { font-size: 8px; }
+  .studio-motion__transport { margin-top: 25px; }
+  .studio-motion__toggle { min-width: 44px; min-height: 44px; }
+}
+
+@media (max-width: 430px) {
+  .studio-motion .creator-preview-note { display: none; }
+  .studio-motion__captions { font-size: 9px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .studio-motion *, .studio-motion *::after { animation: none !important; }
+  .studio-motion .studio-motion__captions > span { opacity: 0; }
+  .studio-motion .studio-motion__captions > .studio-motion__caption--ready { opacity: 1; }
+}

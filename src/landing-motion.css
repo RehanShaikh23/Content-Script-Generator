@@ -1,0 +1,204 @@
+/* Landing-only motion. Translates compose with the artwork's existing rotations. */
+.creator-header {
+  position: sticky;
+  top: 0;
+  z-index: 90;
+  background: #f6f5eff5;
+  border-bottom: 1px solid transparent;
+  transition: background-color 240ms ease, border-color 240ms ease, box-shadow 240ms ease;
+}
+
+.creator-header.is-scrolled {
+  background: #fdfcf9f5;
+  border-color: #dfe4d3;
+  box-shadow: 0 5px 24px #1720160a;
+  backdrop-filter: blur(16px);
+}
+
+.creator-scroll-progress {
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: #83ac43;
+  transform: scaleX(0);
+  transform-origin: left;
+  pointer-events: none;
+}
+
+.creator-landing :is(#features, #pricing, #how-it-works, #faq) {
+  scroll-margin-top: 28px;
+}
+
+.creator-landing.has-motion .creator-reveal {
+  opacity: 0;
+  translate: 0 24px;
+  transition: opacity 640ms ease, translate 720ms cubic-bezier(.16, 1, .3, 1),
+    transform 240ms ease, box-shadow 240ms ease, border-color 240ms ease;
+  transition-delay: var(--reveal-delay, 0ms), var(--reveal-delay, 0ms), 0ms, 0ms, 0ms;
+}
+
+.creator-landing.has-motion .creator-reveal.is-revealed,
+.creator-landing.has-motion .creator-reveal:focus-within {
+  opacity: 1;
+  translate: 0 0;
+}
+
+.creator-landing.has-motion .creator-reveal:focus-within {
+  transition-delay: 0ms;
+  transition-duration: 0ms;
+}
+
+.creator-hero__preview > .studio-mock {
+  transform: perspective(1300px) translateY(var(--hero-depth, 0px)) rotateY(-7deg) rotateZ(1deg);
+}
+
+.creator-hero__portrait {
+  transform: translateY(calc(var(--hero-depth, 0px) * -.6)) rotate(3deg);
+}
+
+.creator-scene-photo {
+  transform: translateY(var(--scene-depth, 0px)) rotate(-10deg);
+}
+
+.creator-prompt-card {
+  transform: translateY(calc(var(--scene-depth, 0px) * -.65)) rotate(7deg);
+}
+
+.creator-nav__links button {
+  position: relative;
+}
+
+.creator-nav__links button::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 1px;
+  height: 2px;
+  background: #759c36;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 220ms ease;
+}
+
+.creator-nav__links button:is(:hover, :focus-visible)::after {
+  transform: scaleX(1);
+}
+
+.creator-landing .studio-btn > svg,
+.creator-landing .creator-icon,
+.creator-rail-controls button,
+.creator-idea > div > span,
+.creator-faq summary svg {
+  transition: transform 260ms cubic-bezier(.16, 1, .3, 1), background-color 200ms ease;
+}
+
+.creator-landing .studio-btn:active,
+.creator-rail-controls button:active {
+  transform: scale(.97);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .creator-feature-grid article:hover,
+  .creator-pricing article:hover {
+    transform: translateY(-5px);
+    border-color: #c8d8ae;
+    box-shadow: 0 14px 32px #2739150c;
+  }
+
+  .creator-feature-grid article:hover .creator-icon {
+    transform: rotate(-6deg) scale(1.06);
+    background: #e1edc4;
+  }
+
+  .creator-landing .studio-btn:hover > svg:last-child {
+    transform: translateX(3px);
+  }
+
+  .creator-rail-controls button:hover {
+    transform: translateY(-2px);
+    background: #e3efcc;
+  }
+
+  .creator-idea:hover > div > span {
+    transform: scale(1.12);
+    background: #162512dc;
+  }
+}
+
+/* Native details keeps keyboard/assistive-technology behavior and works without this enhancement. */
+@supports (interpolate-size: allow-keywords) {
+  .creator-faq details {
+    interpolate-size: allow-keywords;
+  }
+
+  .creator-faq details::details-content {
+    height: 0;
+    overflow: clip;
+    opacity: 0;
+    transition: height 300ms ease, opacity 240ms ease, content-visibility 300ms allow-discrete;
+  }
+
+  .creator-faq details[open]::details-content {
+    height: auto;
+    opacity: 1;
+  }
+}
+
+.creator-auth-dialog[open] {
+  animation: creator-dialog-enter 240ms cubic-bezier(.16, 1, .3, 1);
+}
+
+.creator-auth-dialog[open]::backdrop {
+  animation: creator-backdrop-enter 220ms ease;
+}
+
+@keyframes creator-dialog-enter {
+  from { opacity: 0; transform: translateY(12px) scale(.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes creator-backdrop-enter {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (max-width: 760px) {
+  .creator-nav__links.is-open {
+    animation: creator-dialog-enter 220ms ease;
+  }
+
+  .creator-landing.has-motion .creator-reveal {
+    translate: 0 16px;
+    transition-duration: 480ms, 560ms, 200ms, 200ms, 200ms;
+  }
+
+  .creator-landing.has-motion .creator-reveal.is-revealed,
+  .creator-landing.has-motion .creator-reveal:focus-within {
+    translate: 0 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .creator-faq details::details-content {
+    transition: none;
+  }
+
+  .creator-landing.has-motion .creator-reveal {
+    opacity: 1;
+    translate: none;
+  }
+
+  .creator-landing .studio-btn:is(:hover, :active),
+  .creator-landing .studio-btn:hover > svg,
+  .creator-feature-grid article:hover,
+  .creator-feature-grid article:hover .creator-icon,
+  .creator-pricing article:hover,
+  .creator-rail-controls button:is(:hover, :active),
+  .creator-idea:hover img,
+  .creator-idea:hover > div > span {
+    transform: none;
+  }
+}
