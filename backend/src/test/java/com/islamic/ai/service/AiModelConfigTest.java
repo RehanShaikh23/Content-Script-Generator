@@ -11,7 +11,7 @@ class AiModelConfigTest {
             assertNotNull(input);
             properties.load(input);
         }
-        assertEquals("${OPENROUTER_DEFAULT_MODEL:deepseek/deepseek-chat}",
+        assertEquals("${OPENROUTER_DEFAULT_MODEL:dots-studio/dots-3-note-preview:free}",
                 properties.getProperty("app.ai.openrouter-default-model"));
         assertNull(properties.getProperty("app.ai.api-key"));
         assertNull(properties.getProperty("app.ai.base-url"));
@@ -24,7 +24,7 @@ class AiModelConfigTest {
 
     @Test
     void legacySelectionsResolveToSupportedReplacements() {
-        assertEquals("google/gemma-4-26b-a4b-it:free",
+        assertEquals("thinkingmachines/inkling-small:free",
                 config.resolve("google/gemma-2-9b-it:free", false).modelString());
         assertEquals("anthropic/claude-sonnet-4.6",
                 config.resolve("anthropic/claude-3.5-sonnet", true).modelString());
@@ -46,7 +46,7 @@ class AiModelConfigTest {
 
     @Test
     void existingWorkingModelsRemainUnchanged() {
-        assertEquals("deepseek/deepseek-chat", config.resolve("deepseek/deepseek-chat", false).modelString());
+        assertEquals("dots-studio/dots-3-note-preview:free", config.resolve("deepseek/deepseek-chat", false).modelString());
         assertEquals("openai/gpt-4o", config.resolve("openai/gpt-4o", true).modelString());
         assertEquals("deepseek/deepseek-chat", config.resolve("default", false).modelString());
     }

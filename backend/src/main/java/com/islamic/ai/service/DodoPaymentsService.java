@@ -36,6 +36,9 @@ public class DodoPaymentsService {
     @Value("${app.dodo.premium-product-id}")
     private String premiumProductId;
 
+    @Value("${app.dodo.voice-pack-product-id:}")
+    private String voicePackProductId;
+
     @Value("${app.frontend.url:http://localhost:5173}")
     private String frontendUrl;
 
@@ -250,5 +253,99 @@ public class DodoPaymentsService {
         if (premiumProductId.equals(productId)) return "premium";
         if (standardProductId.equals(productId)) return "standard";
         return "free";
+    }
+
+    /**
+     * Check if a product ID is the voice pack one-time purchase.
+     */
+    public boolean isVoicePackProduct(String productId) {
+        return voicePackProductId != null && !voicePackProductId.isBlank()
+                && voicePackProductId.equals(productId);
+    }
+
+    /**
+     * Get the configured voice pack product ID.
+     */
+    public String getVoicePackProductId() {
+        return voicePackProductId;
+    }
+
+    /**
+     * Create a Dodo Payments checkout session for the ₹800 voice pack (one-time purchase).
+     * Separate from subscription checkout.
+     */
+    public String createVoicePackCheckout(String customerEmail, String customerName) {
+        if (voicePackProductId == null || voicePackProductId.isBlank()) {
+            throw new RuntimeException("Voice pack product ID not configured. Set DODO_VOICE_PACK_PRODUCT_ID.");
+        }
+
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setBearerAuth(apiKey);
+            headers.setContentType(MediaType.APPLICATION_JSON);
+
+            ObjectNode payload = objectMapper.createObjectNode();
+
+            // Product cart — single one-time purchase item
+            ArrayNode items = objectMapper.createArrayNode();
+            ObjectNode item = objectMapper.createObjectNode();
+            item.put("product_id", voicePackProductId);
+            item.put("quantity", 1);
+            items.add(item);
+            payload.set("product_cart", items);
+
+            // Customer details
+            ObjectNode customer = objectMapper.createObjectNode();
+            customer.put("email", customerEmail);
+            if (customerName != null && !customerName.isBlank()) {
+                customer.put("name", customerName);
+            }
+            payload.set("customer", customer);
+
+            // Payment link for one-time purchase
+            payload.put("payment_link", true);
+
+            // Return URL
+            payload.put("return_url", frontendUrl + "?voice_pack=success");
+
+            // Metadata for webhook correlation
+            ObjectNode metadata = objectMapper.createObjectNode();
+            metadata.put("user_email", customerEmail);
+            metadata.put("product_type", "voice_pack");
+            metadata.put("credits", 10000);
+            payload.set("metadata", metadata);
+
+            log.info("🎙️ Creating voice pack checkout: email={} productId={}",
+                    customerEmail, voicePackProductId);
+
+            ResponseEntity<String> response = restTemplate.exchange(
+                    baseUrl + "/checkouts",
+                    HttpMethod.POST,
+                    new HttpEntity<>(payload.toString(), headers),
+                    String.class
+            );
+
+            JsonNode responseBody = objectMapper.readTree(response.getBody());
+
+            String checkoutUrl = responseBody.path("url").asText("");
+            if (checkoutUrl.isEmpty()) {
+                checkoutUrl = responseBody.path("checkout_url").asText("");
+            }
+            if (checkoutUrl.isEmpty()) {
+                checkoutUrl = responseBody.path("payment_link").asText("");
+            }
+
+            if (checkoutUrl.isEmpty()) {
+                log.error("❌ Voice pack checkout response missing URL: {}", response.getBody());
+                throw new RuntimeException("Checkout URL not found in Dodo response");
+            }
+
+            log.info("✅ Voice pack checkout created: url={}", checkoutUrl);
+            return checkoutUrl;
+
+        } catch (Exception e) {
+            log.error("❌ Failed to create voice pack checkout: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to create voice pack checkout: " + e.getMessage(), e);
+        }
     }
 }

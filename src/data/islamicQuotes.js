@@ -152,4 +152,5 @@ const ISLAMIC_QUOTES = [
   { text: 'There are three qualities, whoever has them will taste the sweetness of faith: that Allah and His Messenger are more beloved to him than anything else.', source: 'Sahih al-Bukhari 16', category: 'Love' },
 ];
 
+
 export default ISLAMIC_QUOTES;

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.islamic.ai.model.User;
 import com.islamic.ai.repository.UserRepository;
 import com.islamic.ai.service.DodoPaymentsService;
+import com.islamic.ai.service.VoiceCreditService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,6 +26,7 @@ public class DodoWebhookController {
 
     private final UserRepository userRepository;
     private final DodoPaymentsService dodoPaymentsService;
+    private final VoiceCreditService voiceCreditService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     // Simple in-memory idempotency set (use Redis in production for multi-instance)
@@ -252,12 +254,30 @@ public class DodoWebhookController {
     }
 
     /**
-     * Payment succeeded — renewal payment.
+     * Payment succeeded — could be subscription renewal OR voice pack one-time purchase.
      */
     private void handlePaymentSucceeded(JsonNode data) {
+        String paymentId = data.path("payment_id").asText("");
+        String productId = data.path("product_id").asText("");
         String subscriptionId = data.path("subscription_id").asText("");
+
+        // Check if this is a voice pack purchase (one-time, no subscription_id)
+        if (dodoPaymentsService.isVoicePackProduct(productId)) {
+            handleVoicePackPayment(data, paymentId, productId);
+            return;
+        }
+
+        // Check metadata for product_type = voice_pack
+        String productType = data.path("metadata").path("product_type").asText("");
+        if ("voice_pack".equals(productType)) {
+            handleVoicePackPayment(data, paymentId, productId);
+            return;
+        }
+
         if (subscriptionId.isEmpty()) {
-            // One-time payment, not subscription — skip
+            // One-time payment, not subscription and not voice pack — skip
+            log.info("ℹ️ Unrecognized one-time payment, skipping: paymentId={} productId={}",
+                    paymentId, productId);
             return;
         }
 
@@ -278,6 +298,68 @@ public class DodoWebhookController {
         }
 
         userRepository.save(user);
+    }
+
+    /**
+     * Handle a voice pack one-time purchase payment.
+     * Grants exactly 10,000 voice credits after verifying payment details.
+     */
+    private void handleVoicePackPayment(JsonNode data, String paymentId, String productId) {
+        String customerEmail = extractCustomerEmail(data);
+
+        if (customerEmail.isEmpty()) {
+            log.warn("⚠️ Voice pack payment: no customer email. paymentId={}", paymentId);
+            return;
+        }
+
+        if (paymentId.isEmpty()) {
+            log.warn("⚠️ Voice pack payment: no payment_id in webhook data");
+            return;
+        }
+
+        // Already processed? (idempotent)
+        if (voiceCreditService.isPaymentProcessed(paymentId)) {
+            log.info("ℹ️ Voice pack payment already processed: paymentId={}", paymentId);
+            return;
+        }
+
+        Optional<User> optUser = userRepository.findByEmail(customerEmail);
+        if (optUser.isEmpty()) {
+            log.warn("⚠️ Voice pack payment: no user found for email={}", customerEmail);
+            return;
+        }
+
+        User user = optUser.get();
+
+        // Extract amount — Dodo sends amounts in smallest currency unit (paisa)
+        int amountPaid = data.path("amount").asInt(0);
+        if (amountPaid == 0) {
+            amountPaid = data.path("total_amount").asInt(0);
+        }
+        String currency = data.path("currency").asText("INR");
+
+        // Verify expected amount (₹800 = 80000 paisa) and currency
+        // Allow some tolerance for fees/rounding but log if unexpected
+        if (amountPaid < 79000 || amountPaid > 81000) {
+            log.warn("⚠️ Voice pack payment amount unexpected: {} {} (expected ~80000 paisa). paymentId={}",
+                    amountPaid, currency, paymentId);
+            // Still process — the product ID match is the authority
+        }
+
+        String webhookId = data.path("webhook_id").asText("");
+        String metadata = data.path("metadata").toString();
+
+        int newBalance = voiceCreditService.grantPurchaseCredits(
+                user.getId(), paymentId, productId,
+                amountPaid, currency, webhookId, metadata
+        );
+
+        if (newBalance >= 0) {
+            log.info("✅ Voice pack purchased: user={} paymentId={} newBalance={}",
+                    customerEmail, paymentId, newBalance);
+        } else {
+            log.info("ℹ️ Voice pack payment was duplicate: paymentId={}", paymentId);
+        }
     }
 
     /**

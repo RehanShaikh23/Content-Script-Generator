@@ -5,6 +5,7 @@ import { Sparkle, FileText, ArrowRight } from '@phosphor-icons/react';
 
 
 import DhikrOverlay from './DhikrOverlay';
+import VoiceGenerationPanel from './VoiceGenerationPanel';
 import VisualSceneControls from './VisualSceneControls';
 import VisualScenePanel from './VisualScenePanel';
 import { useAuth } from '../context/AuthContext';
@@ -406,6 +407,19 @@ export default function ScriptForm({ selectedScript, onScriptGenerated, workspac
             </div>
           )}
         </div>
+      )}
+
+      {/* ── Voice Generation Panel ── */}
+      {script && !isStreaming && !isGenerating && (
+        <VoiceGenerationPanel
+          script={script}
+          scriptHistoryId={selectedScript?.id}
+        />
+      )}
+
+      {/* Voice panel shown even without script (locked/purchase state) */}
+      {!script && !isStreaming && !isGenerating && (
+        <VoiceGenerationPanel script="" />
       )}
 
       </section>
