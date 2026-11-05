@@ -10,8 +10,10 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Pure JUnit 5 unit tests for ElevenLabsService (validation, estimation, voice/model listing).
- * Runs without byte-buddy agent attachment for maximum sandbox and CI compatibility.
+ * Pure JUnit 5 unit tests for ElevenLabsService (validation, estimation,
+ * voice/model listing).
+ * Runs without byte-buddy agent attachment for maximum sandbox and CI
+ * compatibility.
  */
 class ElevenLabsServiceTest {
 
@@ -103,8 +105,7 @@ class ElevenLabsServiceTest {
         String error = elevenLabsService.validateRequest(
                 "بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْم",
                 "pNInz6obpgDQGcFmaJgB",
-                "eleven_multilingual_v2"
-        );
+                "eleven_multilingual_v2");
         assertNull(error, "Valid Arabic text should be accepted");
     }
 

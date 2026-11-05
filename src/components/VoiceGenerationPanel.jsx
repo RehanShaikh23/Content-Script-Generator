@@ -46,7 +46,8 @@ export default function VoiceGenerationPanel({ script, scriptHistoryId }) {
   const [loadingVoices, setLoadingVoices] = useState(true);
   const pollRef = useRef(null);
 
-  // ── Fetch balance ──
+  // ── 1. Callbacks (declared before any useEffect hooks to avoid TDZ errors) ──
+
   const fetchBalance = useCallback(async () => {
     if (!token) return;
     try {
@@ -61,7 +62,6 @@ export default function VoiceGenerationPanel({ script, scriptHistoryId }) {
     }
   }, [token]);
 
-  // ── Fetch voices & models ──
   const fetchVoicesAndModels = useCallback(async () => {
     if (!token) return;
     try {
@@ -81,10 +81,40 @@ export default function VoiceGenerationPanel({ script, scriptHistoryId }) {
     }
   }, [token, selectedVoice]);
 
+  const fetchHistory = useCallback(async () => {
+    if (!token) return;
+    try {
+      const data = await apiGet('/voice/history', token);
+      setHistory(data.generations || []);
+    } catch { /* ignore */ }
+  }, [token]);
+
+  const fetchAudioBlob = useCallback(async (genId) => {
+    try {
+      const res = await fetch(`${API_BASE}/voice/audio/${genId}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error('Failed to load audio');
+      const blob = await res.blob();
+      // Revoke previous blob URL to avoid memory leaks
+      if (audioUrl && audioUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(audioUrl);
+      }
+      return URL.createObjectURL(blob);
+    } catch (e) {
+      console.error('Failed to fetch audio:', e);
+      setGenerationError('Failed to load audio. Please try again.');
+      return null;
+    }
+  }, [token, audioUrl]);
+
+  // ── 2. Lifecycle Effects ──
+
   useEffect(() => { fetchBalance(); }, [fetchBalance]);
   useEffect(() => { fetchVoicesAndModels(); }, [fetchVoicesAndModels]);
+  useEffect(() => { if (hasVoicePack) fetchHistory(); }, [hasVoicePack, fetchHistory]);
 
-  // ── Cleanup blob URL on unmount ──
+  // Cleanup blob URL on unmount
   useEffect(() => {
     return () => {
       if (audioUrl && audioUrl.startsWith('blob:')) {
@@ -93,7 +123,7 @@ export default function VoiceGenerationPanel({ script, scriptHistoryId }) {
     };
   }, [audioUrl]);
 
-  // ── Estimate credits when script/model changes ──
+  // Estimate credits when script/model changes
   useEffect(() => {
     if (!script || !token) { setEstimatedCredits(0); return; }
     const timer = setTimeout(async () => {
@@ -105,7 +135,7 @@ export default function VoiceGenerationPanel({ script, scriptHistoryId }) {
     return () => clearTimeout(timer);
   }, [script, selectedModel, token]);
 
-  // ── Poll generation status ──
+  // Poll generation status
   useEffect(() => {
     if (!generationId || generationStatus === 'COMPLETED' || generationStatus === 'FAILED') {
       if (pollRef.current) clearInterval(pollRef.current);
@@ -132,20 +162,10 @@ export default function VoiceGenerationPanel({ script, scriptHistoryId }) {
     }, 2000);
 
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
-  }, [generationId, generationStatus, token, fetchAudioBlob]);
+  }, [generationId, generationStatus, token, fetchAudioBlob, fetchBalance, fetchHistory]);
 
-  // ── Fetch history ──
-  const fetchHistory = useCallback(async () => {
-    if (!token) return;
-    try {
-      const data = await apiGet('/voice/history', token);
-      setHistory(data.generations || []);
-    } catch { /* ignore */ }
-  }, [token]);
+  // ── 3. Actions ──
 
-  useEffect(() => { if (hasVoicePack) fetchHistory(); }, [hasVoicePack, fetchHistory]);
-
-  // ── Generate voice ──
   const handleGenerate = async () => {
     if (!script || isGenerating) return;
 
@@ -177,13 +197,16 @@ export default function VoiceGenerationPanel({ script, scriptHistoryId }) {
     }
   };
 
-  // ── Checkout ──
   const handleCheckout = async () => {
     setIsCheckingOut(true);
     try {
       const data = await apiPost('/voice/checkout', {}, token);
       if (data.success && data.checkoutUrl) {
-        window.open(data.checkoutUrl, '_blank');
+        if (window.DodoPayments?.Checkout) {
+          window.DodoPayments.Checkout.open({ link: data.checkoutUrl });
+        } else {
+          window.open(data.checkoutUrl, '_blank');
+        }
       } else {
         setGenerationError(data.error || 'Failed to create checkout');
       }
@@ -194,7 +217,6 @@ export default function VoiceGenerationPanel({ script, scriptHistoryId }) {
     }
   };
 
-  // ── Audio controls ──
   const togglePlay = () => {
     if (!audioRef.current) return;
     if (isPlaying) {
@@ -210,7 +232,6 @@ export default function VoiceGenerationPanel({ script, scriptHistoryId }) {
     const link = document.createElement('a');
     link.href = `${API_BASE}/voice/audio/${generationId}/download`;
     link.setAttribute('download', `islamic-voice-${generationId}.mp3`);
-    // Add auth header via fetch
     fetch(`${API_BASE}/voice/audio/${generationId}/download`, {
       headers: { 'Authorization': `Bearer ${token}` }
     }).then(res => res.blob()).then(blob => {
@@ -223,27 +244,6 @@ export default function VoiceGenerationPanel({ script, scriptHistoryId }) {
     });
   };
 
-  // ── Fetch audio as blob with auth ──
-  const fetchAudioBlob = useCallback(async (genId) => {
-    try {
-      const res = await fetch(`${API_BASE}/voice/audio/${genId}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (!res.ok) throw new Error('Failed to load audio');
-      const blob = await res.blob();
-      // Revoke previous blob URL to avoid memory leaks
-      if (audioUrl && audioUrl.startsWith('blob:')) {
-        URL.revokeObjectURL(audioUrl);
-      }
-      return URL.createObjectURL(blob);
-    } catch (e) {
-      console.error('Failed to fetch audio:', e);
-      setGenerationError('Failed to load audio. Please try again.');
-      return null;
-    }
-  }, [token, audioUrl]);
-
-  // ── Play history item ──
   const playHistoryItem = async (genId) => {
     setGenerationId(genId);
     setGenerationStatus('COMPLETED');
