@@ -189,8 +189,9 @@ public class ScriptController {
                     "isPremium", isPremium
             ));
         } catch (RuntimeException e) {
+            log.error("❌ Failed to generate script: {}", e.getMessage(), e);
             return ResponseEntity.internalServerError()
-                    .body(Map.of("error", e.getMessage()));
+                    .body(Map.of("error", "Unable to generate script right now. Please try again later."));
         }
     }
 
@@ -209,7 +210,8 @@ public class ScriptController {
                     "isPremium", isPremium
             ));
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+            log.error("❌ Failed to retrieve credits: {}", e.getMessage(), e);
+            return ResponseEntity.badRequest().body(Map.of("error", "Unable to retrieve credits right now. Please try again later."));
         }
     }
 

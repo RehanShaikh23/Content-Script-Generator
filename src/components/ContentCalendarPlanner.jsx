@@ -113,7 +113,12 @@ export default function ContentCalendarPlanner() {
       setTimeout(() => setView('calendar'), 400);
     } catch (err) {
       clearInterval(genInterval.current);
-      setError(err.message || 'Failed to generate calendar');
+      const msg = err?.message || '';
+      if (msg.includes('credit') || msg.includes('Credit') || msg.includes('subscriber') || msg.includes('Subscriber') || msg.includes('plan')) {
+        setError(msg);
+      } else {
+        setError('Unable to generate content calendar right now. Please try again later.');
+      }
       setView('setup');
     }
   }, [isSubscriber, duration, category, tone, platform, userTimezone, token, updateCredits]);
@@ -140,7 +145,7 @@ export default function ContentCalendarPlanner() {
       setDays(data.days || []);
       setView('calendar');
     } catch (err) {
-      setError(err.message || 'Failed to load calendar');
+      setError(err?.message && !err.message.includes('500') ? err.message : 'Unable to load content calendar right now. Please try again later.');
     }
   }, [token]);
 
@@ -183,7 +188,7 @@ export default function ContentCalendarPlanner() {
       const result = await apiPost(`/calendar/${calendarId}/day/${dayNumber}/regenerate`, {}, token);
       setDays(result.days || []);
     } catch (err) {
-      setError(err.message || 'Failed to regenerate');
+      setError(err?.message && !err.message.includes('500') ? err.message : 'Unable to regenerate calendar day right now. Please try again later.');
     } finally {
       setRegeneratingDay(null);
     }
@@ -204,7 +209,7 @@ export default function ContentCalendarPlanner() {
       setEditingDay(null);
       setEditForm({});
     } catch (err) {
-      setError(err.message || 'Failed to save');
+      setError(err?.message && !err.message.includes('500') ? err.message : 'Unable to save calendar day right now. Please try again later.');
     }
   }, [calendarId, editingDay, editForm, token]);
 

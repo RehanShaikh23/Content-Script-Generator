@@ -88,10 +88,10 @@ public class VoiceController {
             ));
         } catch (Exception e) {
             log.error("❌ Failed to create voice pack checkout for user={}: {}",
-                    user.getEmail(), e.getMessage());
+                    user.getEmail(), e.getMessage(), e);
             return ResponseEntity.internalServerError().body(Map.of(
                     "success", false,
-                    "error", "Failed to create checkout session. Please try again."
+                    "error", "Unable to start voice pack checkout right now. Please try again later."
             ));
         }
     }
@@ -175,101 +175,110 @@ public class VoiceController {
             ));
         }
 
-        // 3. Validate script ownership if scriptHistoryId provided
-        UUID scriptId = null;
-        if (scriptHistoryId != null && !scriptHistoryId.isBlank()) {
-            try {
-                scriptId = UUID.fromString(scriptHistoryId);
-                boolean ownsScript = scriptHistoryRepo.findById(scriptId)
-                        .map(sh -> sh.getUserId().equals(user.getId()))
-                        .orElse(false);
-                if (!ownsScript) {
-                    return ResponseEntity.status(403).body(Map.of(
+        try {
+            // 3. Validate script ownership if scriptHistoryId provided
+            UUID scriptId = null;
+            if (scriptHistoryId != null && !scriptHistoryId.isBlank()) {
+                try {
+                    scriptId = UUID.fromString(scriptHistoryId);
+                    boolean ownsScript = scriptHistoryRepo.findById(scriptId)
+                            .map(sh -> sh.getUserId().equals(user.getId()))
+                            .orElse(false);
+                    if (!ownsScript) {
+                        return ResponseEntity.status(403).body(Map.of(
+                                "success", false,
+                                "error", "You do not own this script."
+                        ));
+                    }
+                } catch (IllegalArgumentException e) {
+                    return ResponseEntity.badRequest().body(Map.of(
                             "success", false,
-                            "error", "You do not own this script."
-                    ));
-                }
-            } catch (IllegalArgumentException e) {
-                return ResponseEntity.badRequest().body(Map.of(
-                        "success", false,
-                        "error", "Invalid script ID."
-                ));
-            }
-        }
-
-        // 4. Estimate credits and reserve
-        int estimatedCredits = elevenLabsService.estimateCredits(text, modelId);
-        String idempotencyKey = "gen:" + user.getId() + ":" + System.currentTimeMillis();
-
-        // Check for duplicate using idempotency key from client if provided
-        String clientIdempotencyKey = body.get("idempotencyKey");
-        if (clientIdempotencyKey != null && !clientIdempotencyKey.isBlank()) {
-            idempotencyKey = clientIdempotencyKey;
-            if (generationRepo.existsByIdempotencyKey(idempotencyKey)) {
-                VoiceGeneration existing = generationRepo.findByIdempotencyKey(idempotencyKey).orElse(null);
-                if (existing != null) {
-                    return ResponseEntity.ok(Map.of(
-                            "success", true,
-                            "generationId", existing.getId().toString(),
-                            "status", existing.getStatus(),
-                            "message", "Generation already in progress."
+                            "error", "Invalid script ID."
                     ));
                 }
             }
-        }
 
-        // 5. Create generation record
-        VoiceGeneration generation = VoiceGeneration.builder()
-                .userId(user.getId())
-                .scriptHistoryId(scriptId)
-                .voiceId(voiceId)
-                .modelId(modelId)
-                .inputText(text)
-                .inputCharCount(text.length())
-                .estimatedCredits(estimatedCredits)
-                .idempotencyKey(idempotencyKey)
-                .status("PENDING")
-                .build();
-        generationRepo.save(generation);
+            // 4. Estimate credits and reserve
+            int estimatedCredits = elevenLabsService.estimateCredits(text, modelId);
+            String idempotencyKey = "gen:" + user.getId() + ":" + System.currentTimeMillis();
 
-        // 6. Reserve credits atomically
-        int reserved = creditService.reserveCredits(
-                user.getId(), estimatedCredits, generation.getId().toString()
-        );
+            // Check for duplicate using idempotency key from client if provided
+            String clientIdempotencyKey = body.get("idempotencyKey");
+            if (clientIdempotencyKey != null && !clientIdempotencyKey.isBlank()) {
+                idempotencyKey = clientIdempotencyKey;
+                if (generationRepo.existsByIdempotencyKey(idempotencyKey)) {
+                    VoiceGeneration existing = generationRepo.findByIdempotencyKey(idempotencyKey).orElse(null);
+                    if (existing != null) {
+                        return ResponseEntity.ok(Map.of(
+                                "success", true,
+                                "generationId", existing.getId().toString(),
+                                "status", existing.getStatus(),
+                                "message", "Generation already in progress."
+                        ));
+                    }
+                }
+            }
 
-        if (reserved < 0) {
-            generation.setStatus("FAILED");
-            generation.setErrorMessage("Insufficient voice credits");
+            // 5. Create generation record
+            VoiceGeneration generation = VoiceGeneration.builder()
+                    .userId(user.getId())
+                    .scriptHistoryId(scriptId)
+                    .voiceId(voiceId)
+                    .modelId(modelId)
+                    .inputText(text)
+                    .inputCharCount(text.length())
+                    .estimatedCredits(estimatedCredits)
+                    .idempotencyKey(idempotencyKey)
+                    .status("PENDING")
+                    .build();
             generationRepo.save(generation);
 
-            int balance = creditService.getBalance(user.getId());
-            return ResponseEntity.status(402).body(Map.of(
+            // 6. Reserve credits atomically
+            int reserved = creditService.reserveCredits(
+                    user.getId(), estimatedCredits, generation.getId().toString()
+            );
+
+            if (reserved < 0) {
+                generation.setStatus("FAILED");
+                generation.setErrorMessage("Insufficient voice credits. You have " + creditService.getBalance(user.getId()) +
+                        " credits but need " + estimatedCredits + ".");
+                generationRepo.save(generation);
+
+                int balance = creditService.getBalance(user.getId());
+                return ResponseEntity.status(402).body(Map.of(
+                        "success", false,
+                        "error", "Insufficient voice credits. You have " + balance +
+                                " credits but need " + estimatedCredits + ".",
+                        "balance", balance,
+                        "required", estimatedCredits
+                ));
+            }
+
+            // 7. Update generation with reserved amount
+            generation.setReservedCredits(reserved);
+            generation.setStatus("PENDING");
+            generationRepo.save(generation);
+
+            // 8. Queue async generation
+            elevenLabsService.generateSpeech(generation.getId());
+
+            log.info("🎙️ Voice generation queued: genId={} user={} credits={}",
+                    generation.getId(), user.getEmail(), reserved);
+
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "generationId", generation.getId().toString(),
+                    "status", "PENDING",
+                    "estimatedCredits", estimatedCredits,
+                    "message", "Voice generation started."
+            ));
+        } catch (Exception e) {
+            log.error("❌ Failed to initiate voice generation for user={}: {}", user.getEmail(), e.getMessage(), e);
+            return ResponseEntity.internalServerError().body(Map.of(
                     "success", false,
-                    "error", "Insufficient voice credits. You have " + balance +
-                            " credits but need " + estimatedCredits + ".",
-                    "balance", balance,
-                    "required", estimatedCredits
+                    "error", "Unable to start voice narration right now. Please try again later."
             ));
         }
-
-        // 7. Update generation with reserved amount
-        generation.setReservedCredits(reserved);
-        generation.setStatus("PENDING");
-        generationRepo.save(generation);
-
-        // 8. Queue async generation
-        elevenLabsService.generateSpeech(generation.getId());
-
-        log.info("🎙️ Voice generation queued: genId={} user={} credits={}",
-                generation.getId(), user.getEmail(), reserved);
-
-        return ResponseEntity.ok(Map.of(
-                "success", true,
-                "generationId", generation.getId().toString(),
-                "status", "PENDING",
-                "estimatedCredits", estimatedCredits,
-                "message", "Voice generation started."
-        ));
     }
 
     // ── Generation Status ────────────────────────────────────────────
@@ -311,7 +320,7 @@ public class VoiceController {
             response.put("audioSizeBytes", gen.getAudioSizeBytes());
             response.put("audioDurationMs", gen.getAudioDurationMs());
         } else if ("FAILED".equals(gen.getStatus())) {
-            response.put("error", gen.getErrorMessage());
+            response.put("error", sanitizeVoiceError(gen.getErrorMessage()));
         }
 
         return ResponseEntity.ok(response);
@@ -350,7 +359,7 @@ public class VoiceController {
             entry.put("textPreview", preview);
 
             if ("FAILED".equals(gen.getStatus())) {
-                entry.put("error", gen.getErrorMessage());
+                entry.put("error", sanitizeVoiceError(gen.getErrorMessage()));
             }
 
             history.add(entry);
@@ -387,7 +396,7 @@ public class VoiceController {
         VoiceGeneration gen = opt.get();
         if (!"COMPLETED".equals(gen.getStatus()) || gen.getAudioStorageKey() == null) {
             return ResponseEntity.status(404).body(Map.of(
-                    "error", "Audio not available. Status: " + gen.getStatus()
+                    "error", "Voice narration audio is not ready yet. Please wait a moment and try again."
             ));
         }
 
@@ -404,9 +413,9 @@ public class VoiceController {
 
             return new ResponseEntity<>(audioData, headers, HttpStatus.OK);
         } catch (IOException e) {
-            log.error("❌ Failed to read audio file: genId={} error={}", id, e.getMessage());
+            log.error("❌ Failed to read audio file: genId={} error={}", id, e.getMessage(), e);
             return ResponseEntity.internalServerError().body(Map.of(
-                    "error", "Failed to read audio file."
+                    "error", "Unable to stream audio narration right now. Please try again later."
             ));
         }
     }
@@ -433,7 +442,7 @@ public class VoiceController {
         VoiceGeneration gen = opt.get();
         if (!"COMPLETED".equals(gen.getStatus()) || gen.getAudioStorageKey() == null) {
             return ResponseEntity.status(404).body(Map.of(
-                    "error", "Audio not available."
+                    "error", "Voice narration audio is not ready for download. Please wait a moment and try again."
             ));
         }
 
@@ -447,14 +456,26 @@ public class VoiceController {
 
             return new ResponseEntity<>(audioData, headers, HttpStatus.OK);
         } catch (IOException e) {
-            log.error("❌ Failed to download audio: genId={} error={}", id, e.getMessage());
+            log.error("❌ Failed to download audio: genId={} error={}", id, e.getMessage(), e);
             return ResponseEntity.internalServerError().body(Map.of(
-                    "error", "Failed to download audio file."
+                    "error", "Unable to download audio file right now. Please try again later."
             ));
         }
     }
 
     // ── Helper ───────────────────────────────────────────────────────
+
+    private String sanitizeVoiceError(String error) {
+        if (error == null || error.isBlank()) {
+            return "Voice narration could not be completed. Your credits have been restored. Please try again later.";
+        }
+        String lower = error.toLowerCase();
+        if (lower.contains("exception") || lower.contains("http") || lower.contains("error:")
+                || lower.contains("status code") || lower.contains("connect") || lower.contains("failed to")) {
+            return "Voice narration could not be completed. Your credits have been restored. Please try again later.";
+        }
+        return error;
+    }
 
     private User getAuthenticatedUser() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();

@@ -179,7 +179,12 @@ export default function ScriptForm({ selectedScript, onScriptGenerated, workspac
         }
       },
       onError: (err) => {
-        setError(err.message || 'Failed to generate script');
+        const msg = err?.message || '';
+        if (msg.includes('credit') || msg.includes('Credit') || msg.includes('upgrade') || msg.includes('Upgrade') || msg.includes('plan')) {
+          setError(msg);
+        } else {
+          setError('Unable to generate script right now. Please try again later.');
+        }
         clearInterval(intervalRef.current);
         setIsGenerating(false);
         setIsStreaming(false);
@@ -226,7 +231,8 @@ export default function ScriptForm({ selectedScript, onScriptGenerated, workspac
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     } catch (err) {
-      setError(err.message || `Failed to export as ${format.toUpperCase()}`);
+      console.error('Export error:', err);
+      setError(`Unable to export script as ${format.toUpperCase()} right now. Please try again later.`);
     } finally {
       setExporting(null);
     }

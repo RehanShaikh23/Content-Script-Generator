@@ -2,6 +2,7 @@ package com.islamic.ai.service;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpStatus;
 
 import java.lang.reflect.Field;
 import java.util.List;
@@ -125,6 +126,7 @@ class ElevenLabsServiceTest {
         }
     }
 
+
     @Test
     void validateRequest_acceptsBothApprovedModels() {
         String error1 = elevenLabsService.validateRequest("Test", "pNInz6obpgDQGcFmaJgB", "eleven_multilingual_v2");
@@ -225,5 +227,55 @@ class ElevenLabsServiceTest {
             }
         }
         assertTrue(found, "eleven_multilingual_v2 should be in approved models");
+    }
+
+    // ── Friendly Error Messages ─────────────────────────────────────
+
+    @Test
+    void resolveUserFriendlyErrorMessage_maps429RateLimit() {
+        String msg = elevenLabsService.resolveUserFriendlyErrorMessage(null, HttpStatus.TOO_MANY_REQUESTS);
+        assertNotNull(msg);
+        assertTrue(msg.contains("temporarily busy") && msg.contains("credits have been restored") && msg.contains("Please try again in a few moments."));
+        assertFalse(msg.contains("429"));
+    }
+
+    @Test
+    void resolveUserFriendlyErrorMessage_maps400BadRequest() {
+        String msg = elevenLabsService.resolveUserFriendlyErrorMessage(null, HttpStatus.BAD_REQUEST);
+        assertNotNull(msg);
+        assertTrue(msg.contains("text could not be processed") && msg.contains("credits have been restored"));
+        assertFalse(msg.contains("400"));
+    }
+
+    @Test
+    void resolveUserFriendlyErrorMessage_maps5xxServerUnavailable() {
+        String msg = elevenLabsService.resolveUserFriendlyErrorMessage(null, HttpStatus.SERVICE_UNAVAILABLE);
+        assertNotNull(msg);
+        assertTrue(msg.contains("provider is currently unavailable") && msg.contains("credits have been restored") && msg.contains("Please try again later."));
+        assertFalse(msg.contains("503"));
+    }
+
+    @Test
+    void resolveUserFriendlyErrorMessage_mapsTimeoutException() {
+        String msg = elevenLabsService.resolveUserFriendlyErrorMessage(new RuntimeException("Connection timed out after 30000ms"), null);
+        assertNotNull(msg);
+        assertTrue(msg.contains("timed out") && msg.contains("credits have been restored") && msg.contains("Please try again in a few moments."));
+        assertFalse(msg.contains("RuntimeException"));
+    }
+
+    @Test
+    void resolveUserFriendlyErrorMessage_mapsNetworkException() {
+        String msg = elevenLabsService.resolveUserFriendlyErrorMessage(new RuntimeException("Failed to connect to host: network unreachable"), null);
+        assertNotNull(msg);
+        assertTrue(msg.contains("Unable to connect to the voice narration service") && msg.contains("credits have been restored") && msg.contains("Please try again later."));
+        assertFalse(msg.contains("RuntimeException"));
+    }
+
+    @Test
+    void resolveUserFriendlyErrorMessage_mapsGenericExceptionPolitely() {
+        String msg = elevenLabsService.resolveUserFriendlyErrorMessage(new NullPointerException("Null reference at line 42"), null);
+        assertNotNull(msg);
+        assertEquals("Voice narration could not be completed. Your credits have been restored. Please try again later.", msg);
+        assertFalse(msg.contains("NullPointerException"));
     }
 }

@@ -113,7 +113,7 @@ export default function SubscriptionModal({ isOpen, onClose, onCancelSubscriptio
       }
     } catch (err) {
       console.error('Checkout error:', err);
-      setError(err.message || 'Failed to start checkout.');
+      setError('Unable to start checkout right now. Please try again later.');
       setActivating(null);
     }
   }
@@ -168,11 +168,11 @@ export default function SubscriptionModal({ isOpen, onClose, onCancelSubscriptio
         );
         await refreshSubscription();
       } else {
-        setError(result.error || 'Failed to reactivate.');
+        setError(result.error || 'Unable to reactivate subscription right now. Please try again later.');
       }
     } catch (err) {
       console.error('Reactivation error:', err);
-      setError(err.message || 'Failed to reactivate subscription.');
+      setError('Unable to reactivate subscription right now. Please try again later or contact support.');
     } finally {
       setReactivating(false);
     }

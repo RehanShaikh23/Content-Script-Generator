@@ -213,12 +213,14 @@ public class ElevenLabsService {
                         generationId, audioData.length / 1024, actualCredits);
 
             } else {
-                handleGenerationFailure(gen, "ElevenLabs returned status: " + response.getStatusCode());
+                log.warn("❌ ElevenLabs returned non-2xx status: genId={} status={}",
+                        generationId, response.getStatusCode());
+                handleGenerationFailure(gen, resolveUserFriendlyErrorMessage(null, response.getStatusCode()));
             }
 
         } catch (Exception e) {
             log.error("❌ Voice generation failed: genId={} error={}", generationId, e.getMessage(), e);
-            handleGenerationFailure(gen, e.getMessage());
+            handleGenerationFailure(gen, resolveUserFriendlyErrorMessage(e, null));
         }
     }
 
@@ -233,9 +235,9 @@ public class ElevenLabsService {
 
     // ── Private Helpers ──────────────────────────────────────────────
 
-    private void handleGenerationFailure(VoiceGeneration gen, String errorMessage) {
+    private void handleGenerationFailure(VoiceGeneration gen, String userFriendlyMessage) {
         gen.setStatus("FAILED");
-        gen.setErrorMessage(errorMessage != null ? errorMessage.substring(0, Math.min(errorMessage.length(), 1000)) : "Unknown error");
+        gen.setErrorMessage(userFriendlyMessage != null ? userFriendlyMessage : "Voice narration could not be completed. Your credits have been restored. Please try again later.");
         gen.setCompletedAt(OffsetDateTime.now());
         generationRepo.save(gen);
 
@@ -247,6 +249,35 @@ public class ElevenLabsService {
                     gen.getId().toString()
             );
         }
+    }
+
+    /**
+     * Map internal errors, timeouts, and provider statuses to helpful, user-friendly messages
+     * related specifically to voice narration without exposing technical exceptions.
+     */
+    String resolveUserFriendlyErrorMessage(Throwable error, HttpStatusCode statusCode) {
+        if (statusCode != null) {
+            if (statusCode.value() == 429) {
+                return "Voice narration is temporarily busy with high demand. Your credits have been restored. Please try again in a few moments.";
+            } else if (statusCode.value() == 400) {
+                return "The narration text could not be processed. Your credits have been restored. Please check the text and try again.";
+            } else if (statusCode.is5xxServerError()) {
+                return "Voice narration provider is currently unavailable. Your credits have been restored. Please try again later.";
+            }
+        }
+        if (error != null) {
+            String msg = error.getMessage() != null ? error.getMessage().toLowerCase() : "";
+            if (msg.contains("timeout") || msg.contains("timed out")) {
+                return "Voice narration request timed out. Your credits have been restored. Please try again in a few moments.";
+            }
+            if (msg.contains("connect") || msg.contains("refused") || msg.contains("network")) {
+                return "Unable to connect to the voice narration service. Your credits have been restored. Please try again later.";
+            }
+            if (msg.contains("429")) {
+                return "Voice narration is temporarily busy. Your credits have been restored. Please try again in a few moments.";
+            }
+        }
+        return "Voice narration could not be completed. Your credits have been restored. Please try again later.";
     }
 
     private Path ensureStorageDir() throws IOException {

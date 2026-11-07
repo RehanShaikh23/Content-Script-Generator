@@ -135,12 +135,12 @@ export default function CancelSubscriptionModal({ isOpen, onClose }) {
         });
         setStep('success');
       } else {
-        setError(result.error || 'Failed to cancel subscription. Please try again.');
+        setError(result.error || 'Unable to cancel subscription right now. Please try again later.');
         setStep('error');
       }
     } catch (err) {
       console.error('Cancellation error:', err);
-      setError(err.message || 'Failed to cancel subscription. Please try again or contact support.');
+      setError('Unable to cancel subscription right now. Please try again later or contact support.');
       setStep('error');
     }
   }

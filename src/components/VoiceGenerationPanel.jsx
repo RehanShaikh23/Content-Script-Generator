@@ -103,7 +103,7 @@ export default function VoiceGenerationPanel({ script, scriptHistoryId }) {
       return URL.createObjectURL(blob);
     } catch (e) {
       console.error('Failed to fetch audio:', e);
-      setGenerationError('Failed to load audio. Please try again.');
+      setGenerationError('Unable to play audio narration right now. Please try again later.');
       return null;
     }
   }, [token, audioUrl]);
@@ -155,7 +155,7 @@ export default function VoiceGenerationPanel({ script, scriptHistoryId }) {
           fetchHistory();
         } else if (data.status === 'FAILED') {
           setIsGenerating(false);
-          setGenerationError(data.error || 'Generation failed');
+          setGenerationError(data.error || 'Voice narration could not be completed. Your credits have been restored. Please try again later.');
           fetchBalance();
         }
       } catch { /* ignore */ }
@@ -188,17 +188,24 @@ export default function VoiceGenerationPanel({ script, scriptHistoryId }) {
         setGenerationStatus(data.status);
       } else {
         setIsGenerating(false);
-        setGenerationError(data.error || 'Failed to start generation');
+        const err = data.error || 'Unable to start voice narration right now. Please try again later.';
+        setGenerationError(err);
         if (data.balance !== undefined) setBalance(data.balance);
       }
     } catch (e) {
       setIsGenerating(false);
-      setGenerationError(e.message || 'Failed to start generation');
+      const msg = e?.message || '';
+      if (msg.includes('credit') || msg.includes('Credit') || msg.includes('balance') || msg.includes('Balance')) {
+        setGenerationError(msg);
+      } else {
+        setGenerationError('Unable to start voice narration right now. Please try again later.');
+      }
     }
   };
 
   const handleCheckout = async () => {
     setIsCheckingOut(true);
+    setGenerationError('');
     try {
       const data = await apiPost('/voice/checkout', {}, token);
       if (data.success && data.checkoutUrl) {
@@ -208,10 +215,11 @@ export default function VoiceGenerationPanel({ script, scriptHistoryId }) {
           window.open(data.checkoutUrl, '_blank');
         }
       } else {
-        setGenerationError(data.error || 'Failed to create checkout');
+        setGenerationError(data.error || 'Unable to start the voice pack checkout right now. Please try again later.');
       }
     } catch (e) {
-      setGenerationError(e.message || 'Checkout failed');
+      console.error('Checkout error:', e);
+      setGenerationError('Unable to start the voice pack checkout right now. Please try again later.');
     } finally {
       setIsCheckingOut(false);
     }
@@ -234,14 +242,23 @@ export default function VoiceGenerationPanel({ script, scriptHistoryId }) {
     link.setAttribute('download', `islamic-voice-${generationId}.mp3`);
     fetch(`${API_BASE}/voice/audio/${generationId}/download`, {
       headers: { 'Authorization': `Bearer ${token}` }
-    }).then(res => res.blob()).then(blob => {
-      const url = URL.createObjectURL(blob);
-      link.href = url;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    });
+    })
+      .then(res => {
+        if (!res.ok) throw new Error('Download failed');
+        return res.blob();
+      })
+      .then(blob => {
+        const url = URL.createObjectURL(blob);
+        link.href = url;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      })
+      .catch(e => {
+        console.error('Failed to download audio:', e);
+        setGenerationError('Unable to download audio file right now. Please try again later.');
+      });
   };
 
   const playHistoryItem = async (genId) => {

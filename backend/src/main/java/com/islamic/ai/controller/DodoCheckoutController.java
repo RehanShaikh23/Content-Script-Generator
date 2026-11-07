@@ -58,10 +58,10 @@ public class DodoCheckoutController {
             ));
 
         } catch (Exception e) {
-            log.error("❌ Failed to create checkout session for user={}: {}", email, e.getMessage());
+            log.error("❌ Failed to create checkout session for user={}: {}", email, e.getMessage(), e);
             return ResponseEntity.internalServerError().body(Map.of(
                     "success", false,
-                    "error", "Failed to create checkout session. Please try again."
+                    "error", "Unable to start subscription checkout right now. Please try again later."
             ));
         }
     }

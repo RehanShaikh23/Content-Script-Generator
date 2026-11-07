@@ -55,10 +55,10 @@ public class VisualSceneController {
             return ResponseEntity.ok(response);
 
         } catch (RuntimeException e) {
-            log.error("Visual scene generation failed: {}", e.getMessage());
+            log.error("Visual scene generation failed: {}", e.getMessage(), e);
             return ResponseEntity.internalServerError()
                     .body(Map.of(
-                            "error", e.getMessage(),
+                            "error", "Unable to generate visual scene prompt right now. Please try again later.",
                             "generationId", request.getGenerationId() != null ? request.getGenerationId() : "",
                             "sceneId", request.getSceneId() != null ? request.getSceneId() : ""
                     ));
@@ -83,9 +83,9 @@ public class VisualSceneController {
             return ResponseEntity.ok(Map.of("globalVisualProfile", profile));
 
         } catch (RuntimeException e) {
-            log.error("Visual profile generation failed: {}", e.getMessage());
+            log.error("Visual profile generation failed: {}", e.getMessage(), e);
             return ResponseEntity.internalServerError()
-                    .body(Map.of("error", e.getMessage()));
+                    .body(Map.of("error", "Unable to generate visual profile right now. Please try again later."));
         }
     }
 

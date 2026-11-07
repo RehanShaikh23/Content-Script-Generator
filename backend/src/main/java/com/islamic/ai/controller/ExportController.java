@@ -50,7 +50,7 @@ public class ExportController {
         } catch (Exception e) {
             log.error("PDF export failed: {}", e.getMessage(), e);
             return ResponseEntity.internalServerError()
-                    .body(Map.of("error", "Failed to generate PDF"));
+                    .body(Map.of("error", "Unable to generate PDF document right now. Please try again later."));
         }
     }
 
@@ -78,7 +78,7 @@ public class ExportController {
         } catch (Exception e) {
             log.error("DOCX export failed: {}", e.getMessage(), e);
             return ResponseEntity.internalServerError()
-                    .body(Map.of("error", "Failed to generate DOCX"));
+                    .body(Map.of("error", "Unable to generate DOCX document right now. Please try again later."));
         }
     }
 

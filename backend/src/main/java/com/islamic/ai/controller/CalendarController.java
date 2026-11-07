@@ -108,7 +108,7 @@ public class CalendarController {
 
         } catch (Exception e) {
             log.error("Calendar generation failed: {}", e.getMessage(), e);
-            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
+            return ResponseEntity.internalServerError().body(Map.of("error", "Unable to generate content calendar right now. Please try again later."));
         }
     }
 
@@ -161,7 +161,8 @@ public class CalendarController {
             return ResponseEntity.ok(Map.of("calendars", summaries));
 
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
+            log.error("Failed to list calendars: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().body(Map.of("error", "Unable to load content calendars right now. Please try again later."));
         }
     }
 
@@ -196,7 +197,8 @@ public class CalendarController {
             ));
 
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
+            log.error("Failed to retrieve calendar: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().body(Map.of("error", "Unable to load the content calendar right now. Please try again later."));
         }
     }
 
@@ -244,7 +246,8 @@ public class CalendarController {
             return ResponseEntity.ok(Map.of("success", true, "days", days));
 
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
+            log.error("Failed to update calendar day: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().body(Map.of("error", "Unable to update calendar day right now. Please try again later."));
         }
     }
 
@@ -300,8 +303,8 @@ public class CalendarController {
             return ResponseEntity.ok(Map.of("success", true, "day", newDay, "days", days));
 
         } catch (Exception e) {
-            log.error("Regenerate day failed: {}", e.getMessage());
-            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
+            log.error("Regenerate day failed: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().body(Map.of("error", "Unable to regenerate calendar day right now. Please try again later."));
         }
     }
 
@@ -324,7 +327,8 @@ public class CalendarController {
             return ResponseEntity.ok(Map.of("success", true));
 
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
+            log.error("Failed to delete calendar: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().body(Map.of("error", "Unable to delete calendar right now. Please try again later."));
         }
     }
 
@@ -384,7 +388,8 @@ public class CalendarController {
                     .body(sb.toString());
 
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
+            log.error("Failed to export calendar: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError().body(Map.of("error", "Unable to export calendar right now. Please try again later."));
         }
     }
 

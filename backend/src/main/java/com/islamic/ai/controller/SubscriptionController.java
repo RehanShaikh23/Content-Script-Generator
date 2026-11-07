@@ -149,7 +149,7 @@ public class SubscriptionController {
                     email, user.getSubscriptionId(), provider);
             return ResponseEntity.internalServerError().body(Map.of(
                     "success", false,
-                    "error", "Failed to cancel subscription. Please try again or contact support."
+                    "error", "Unable to cancel subscription right now. Please try again later or contact support."
             ));
         }
 
@@ -247,7 +247,7 @@ public class SubscriptionController {
             log.error("❌ PayPal reactivate API failed for user={} subId={}", email, user.getSubscriptionId());
             return ResponseEntity.internalServerError().body(Map.of(
                     "success", false,
-                    "error", "Failed to reactivate subscription. Please try again or contact support."
+                    "error", "Unable to reactivate subscription right now. Please try again later or contact support."
             ));
         }
 
